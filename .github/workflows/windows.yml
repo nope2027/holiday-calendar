@@ -1,0 +1,90 @@
+# 화면 파일(index.html 등)이나 windows/ 가 바뀌면 Windows용 zip 을 새로 만들어 릴리스에 올림
+# 받는 주소: https://github.com/<계정>/holiday-calendar/releases/latest/download/holiday-calendar-windows.zip
+name: Windows 다운로드 만들기
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'data.js'
+      - 'sw.js'
+      - 'manifest.webmanifest'
+      - 'icons/**'
+      - 'fonts/**'
+      - 'windows/**'
+      - '.github/workflows/windows.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: windows-zip
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: 도구 (C# 컴파일러 mono, Pillow)
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq mono-mcs mono-devel > /dev/null
+          python -m pip install --quiet pillow
+
+      - name: WebView2 SDK 1.0.3856.49 (pywebview 6.2.1 에 들어 있는 것과 같은 파일)
+        run: |
+          python -m pip download --quiet --no-deps --only-binary :all: -d dl pywebview==6.2.1
+          echo "9d07275f53894ab4d5e2e0e996227193e7187dec276d9b624dccbce029216b46  dl/pywebview-6.2.1-py3-none-any.whl" | sha256sum -c -
+          unzip -q dl/pywebview-6.2.1-py3-none-any.whl 'webview/lib/*' -d wv
+
+      - name: 프로그램 만들기
+        run: |
+          L=wv/webview/lib
+          python windows/make_ico.py icons/icon-512.png app.ico
+          mcs -sdk:4.8 -target:winexe -platform:anycpu -optimize+ -langversion:6 -codepage:utf8 -warnaserror+ \
+            -out:HolidayCalendar.exe -win32icon:app.ico -resource:app.ico,app.ico \
+            -r:System.dll -r:System.Drawing.dll -r:System.Windows.Forms.dll \
+            -r:$L/Microsoft.Web.WebView2.Core.dll -r:$L/Microsoft.Web.WebView2.WinForms.dll \
+            windows/HolidayCalendar.cs
+
+      - name: zip 묶기
+        run: |
+          L=wv/webview/lib
+          D="pkg/휴장캘린더"
+          mkdir -p "$D/app"
+          cp HolidayCalendar.exe "$D/휴장캘린더.exe"
+          cp $L/Microsoft.Web.WebView2.Core.dll $L/Microsoft.Web.WebView2.WinForms.dll "$D/"
+          for a in win-x64 win-x86 win-arm64; do mkdir -p "$D/runtimes/$a/native"; cp "$L/runtimes/$a/native/WebView2Loader.dll" "$D/runtimes/$a/native/"; done
+          cp windows/라이선스.txt "$D/"
+          cp index.html data.js sw.js manifest.webmanifest "$D/app/"
+          cp -r icons fonts "$D/app/"
+          python windows/make_zip.py "$D" holiday-calendar-windows.zip
+
+      - name: 릴리스에 올리기 (늘 같은 주소)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          NOTES="휴장 캘린더 — Windows 위젯 ($(date -u +%Y-%m-%d) · ${GITHUB_SHA::7})
+
+          1. holiday-calendar-windows.zip 받기
+          2. 압축 풀기
+          3. 휴장캘린더 폴더의 휴장캘린더.exe 실행
+             (처음 실행할 때 'Windows의 PC 보호' 창이 뜨면 → 추가 정보 → 실행)
+
+          필요: Windows 10·11 (Microsoft Edge WebView2 런타임 — 보통 이미 깔려 있음)
+          휴대폰·맥: https://${GITHUB_REPOSITORY_OWNER,,}.github.io/${GITHUB_REPOSITORY#*/}/"
+          R="$GITHUB_REPOSITORY"
+          if gh release view windows -R "$R" > /dev/null 2>&1; then
+            gh release upload windows holiday-calendar-windows.zip --clobber -R "$R"
+            gh release edit windows --notes "$NOTES" --latest -R "$R"
+          else
+            gh release create windows holiday-calendar-windows.zip --title "휴장 캘린더 Windows" --notes "$NOTES" --latest -R "$R"
+          fi
