@@ -55,15 +55,28 @@ jobs:
             -r:$L/Microsoft.Web.WebView2.Core.dll -r:$L/Microsoft.Web.WebView2.WinForms.dll \
             windows/HolidayCalendar.cs
 
-      - name: zip 묶기
+      - name: zip 묶기 (zip 안 이름은 영문만 — 어떤 Windows에서도 탐색기로 풀리게)
         run: |
           L=wv/webview/lib
-          D="pkg/휴장캘린더"
+          D="pkg/HolidayCalendar"
           mkdir -p "$D/app"
-          cp HolidayCalendar.exe "$D/휴장캘린더.exe"
+          cp HolidayCalendar.exe "$D/HolidayCalendar.exe"
           cp $L/Microsoft.Web.WebView2.Core.dll $L/Microsoft.Web.WebView2.WinForms.dll "$D/"
           for a in win-x64 win-x86 win-arm64; do mkdir -p "$D/runtimes/$a/native"; cp "$L/runtimes/$a/native/WebView2Loader.dll" "$D/runtimes/$a/native/"; done
-          cp windows/라이선스.txt "$D/"
+          cp windows/라이선스.txt "$D/LICENSE.txt"
+          W="https://${GITHUB_REPOSITORY_OWNER,,}.github.io/${GITHUB_REPOSITORY#*/}/"
+          { printf '\xef\xbb\xbf'; sed 's/$/\r/' <<EOF
+          휴장 캘린더 — Windows 위젯
+
+          실행: 이 폴더의 HolidayCalendar.exe 를 두 번 클릭
+            (처음 실행할 때 'Windows의 PC 보호' 창이 뜨면 → 추가 정보 → 실행)
+            app · runtimes 폴더와 dll 파일은 같이 있어야 실행됩니다 (지우지 마세요)
+
+          필요: Windows 10·11 (Microsoft Edge WebView2 런타임 — 보통 이미 깔려 있음)
+          휴대폰·맥: $W
+          라이선스: LICENSE.txt
+          EOF
+          } > "$D/README.txt"
           cp index.html data.js sw.js manifest.webmanifest "$D/app/"
           cp -r icons fonts "$D/app/"
           python windows/make_zip.py "$D" holiday-calendar-windows.zip
@@ -75,8 +88,8 @@ jobs:
           NOTES="휴장 캘린더 — Windows 위젯 ($(date -u +%Y-%m-%d) · ${GITHUB_SHA::7})
 
           1. holiday-calendar-windows.zip 받기
-          2. 압축 풀기
-          3. 휴장캘린더 폴더의 휴장캘린더.exe 실행
+          2. 압축 풀기 (zip 오른쪽 클릭 → 모두 압축 풀기)
+          3. 풀린 폴더의 HolidayCalendar.exe 실행
              (처음 실행할 때 'Windows의 PC 보호' 창이 뜨면 → 추가 정보 → 실행)
 
           필요: Windows 10·11 (Microsoft Edge WebView2 런타임 — 보통 이미 깔려 있음)
