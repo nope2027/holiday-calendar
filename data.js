@@ -38,14 +38,21 @@ window.HOLIDAY_DATA = {
   // 탭별 기본 종목입니다. 위젯의 설정 › 시세 종목에서 추가·삭제하면 그 목록을 따로 저장해서 씁니다.
   quotes: {
     tabs: [
-      // '@'로 시작하는 것은 지수 선물(아래 indices), 나머지는 바이낸스 무기한 선물 기호
-      { id:"all", name:"전체", items:["@KR200","@US30","@NDX","@SPX","@N225","SAMSUNG","SKHYNIX","HYUNDAI","NAVER","LGELECTRONICS","HANMI","SAMSUNGEM"] },
-      { id:"kr",  name:"한국", items:["@KR200","SAMSUNG","SKHYNIX","HYUNDAI","NAVER","LGELECTRONICS","HANMI","SAMSUNGEM","KODEX200","EWY"] },
-      { id:"us",  name:"미국", items:["@US30","@NDX","@SPX","SPY","QQQ","IWM","SMH","NVDA","AAPL","MSFT","AMZN","GOOGL","META","TSLA"] },
-      { id:"jp",  name:"일본", items:["@N225","EWJ","SONY"], note:"일본 종목은 EWJ·소니뿐" }
+      // '@'로 시작하는 것은 지수(아래 indices — 현물 지수와 지수 선물), 나머지는 바이낸스 무기한 선물 기호
+      { id:"all", name:"전체", items:["@KOSPI","@KOSDAQ","@DJI","@NKY","@SSEC","@KR200","@US30","@NDX","@SPX","@N225","SAMSUNG","SKHYNIX","HYUNDAI","NAVER","LGELECTRONICS","HANMI","SAMSUNGEM"] },
+      { id:"kr",  name:"한국", items:["@KOSPI","@KOSDAQ","@KR200","SAMSUNG","SKHYNIX","HYUNDAI","NAVER","LGELECTRONICS","HANMI","SAMSUNGEM","KODEX200","EWY"] },
+      { id:"us",  name:"미국", items:["@DJI","@US30","@NDX","@SPX","SPY","QQQ","IWM","SMH","NVDA","AAPL","MSFT","AMZN","GOOGL","META","TSLA"] },
+      { id:"jp",  name:"일본", items:["@NKY","@N225","EWJ","SONY"], note:"일본 종목은 EWJ·소니뿐" }
     ],
-    // 지수 선물 (24시간 무기한 선물 가격): hl = 하이퍼리퀴드 trade.xyz, gate = 게이트
     indices: {
+      // 현물 지수 (거래소 장 시간에만 움직임): tc = 텐센트 증권 공개 시세 (qt.gtimg.cn)
+      //   ex = 거래소(표시용), mkt = 장 시간·휴장일을 따를 나라, kl = 일별 차트 받는 방법(없으면 차트 없음), fut = 같은 지수의 24시간 선물
+      "@KOSPI":  { n:"코스피",    sub:"KOSPI",  ex:"한국거래소",     src:"tc", id:"gzKS11",   mkt:"KR", dg:2, fut:"@KR200", alias:"코스피 kospi ks11 종합주가지수" },
+      "@KOSDAQ": { n:"코스닥",    sub:"KOSDAQ", ex:"한국거래소",     src:"tc", id:"gzKOSDAQ", mkt:"KR", dg:2, alias:"코스닥 kosdaq kq11" },
+      "@DJI":    { n:"다우",      sub:"DJIA",   ex:"미국 뉴욕",      src:"tc", id:"usDJI",    mkt:"US", dg:2, fut:"@US30", kl:"kline", alias:"다우존스 dow dji djia 다우지수" },
+      "@NKY":    { n:"니케이225", sub:"N225",   ex:"도쿄증권거래소", src:"tc", id:"gzN225",   mkt:"JP", dg:2, fut:"@N225", alias:"니케이 닛케이 nikkei n225 nky 일경" },
+      "@SSEC":   { n:"상해종합",  sub:"SSE",    ex:"상해증권거래소", src:"tc", id:"sh000001", mkt:"CN", dg:2, kl:"fqkline", alias:"상해 상하이 shanghai sse ssec 000001 상증" },
+      // 지수 선물 (24시간 무기한 선물 가격): hl = 하이퍼리퀴드 trade.xyz, gate = 게이트
       "@KR200": { n:"코스피200", sub:"KR200 · 선물", src:"hl",   id:"xyz:KR200",  dg:2, alias:"코스피 kospi kospi200 ks200" },
       "@US30":  { n:"다우",      sub:"US30 · 선물",  src:"gate", id:"US30_USDT",  dg:0, alias:"다우존스 dow dji ym us30" },
       "@NDX":   { n:"나스닥100", sub:"XYZ100 · 선물", src:"hl",  id:"xyz:XYZ100", dg:1, alias:"나스닥 nasdaq ndx nq nas100" },
