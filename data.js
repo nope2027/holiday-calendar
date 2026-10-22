@@ -39,25 +39,92 @@ window.HOLIDAY_DATA = {
   quotes: {
     tabs: [
       // '@'로 시작하는 것은 지수(아래 indices — 현물 지수와 지수 선물), 나머지는 바이낸스 무기한 선물 기호
-      { id:"all", name:"전체", items:["@KOSPI","@KOSDAQ","@DJI","@NKY","@SSEC","@KR200","@US30","@NDX","@SPX","@N225","SAMSUNG","SKHYNIX","HYUNDAI","NAVER","LGELECTRONICS","HANMI","SAMSUNGEM"] },
+      { id:"all", name:"전체", items:["@KOSPI","@KOSDAQ","@DJI","@IXIC","@NKY","@SSEC","@KR200","@US30","@NDX","@SPX","@N225","SAMSUNG","SKHYNIX","HYUNDAI","NAVER","LGELECTRONICS","HANMI","SAMSUNGEM"] },
       { id:"kr",  name:"한국", items:["@KOSPI","@KOSDAQ","@KR200","SAMSUNG","SKHYNIX","HYUNDAI","NAVER","LGELECTRONICS","HANMI","SAMSUNGEM","KODEX200","EWY"] },
-      { id:"us",  name:"미국", items:["@DJI","@US30","@NDX","@SPX","SPY","QQQ","IWM","SMH","NVDA","AAPL","MSFT","AMZN","GOOGL","META","TSLA"] },
+      { id:"us",  name:"미국", items:["@DJI","@IXIC","@US30","@NDX","@SPX","SPY","QQQ","IWM","SMH","NVDA","AAPL","MSFT","AMZN","GOOGL","META","TSLA"] },
       { id:"jp",  name:"일본", items:["@NKY","@N225","EWJ","SONY"], note:"일본 종목은 EWJ·소니뿐" }
     ],
     indices: {
-      // 현물 지수 (거래소 장 시간에만 움직임): tc = 텐센트 증권 공개 시세 (qt.gtimg.cn)
-      //   ex = 거래소(표시용), mkt = 장 시간·휴장일을 따를 나라, kl = 일별 차트 받는 방법(없으면 차트 없음), fut = 같은 지수의 24시간 선물
-      "@KOSPI":  { n:"코스피",    sub:"KOSPI",  ex:"한국거래소",     src:"tc", id:"gzKS11",   mkt:"KR", dg:2, fut:"@KR200", alias:"코스피 kospi ks11 종합주가지수" },
-      "@KOSDAQ": { n:"코스닥",    sub:"KOSDAQ", ex:"한국거래소",     src:"tc", id:"gzKOSDAQ", mkt:"KR", dg:2, alias:"코스닥 kosdaq kq11" },
-      "@DJI":    { n:"다우",      sub:"DJIA",   ex:"미국 뉴욕",      src:"tc", id:"usDJI",    mkt:"US", dg:2, fut:"@US30", kl:"kline", alias:"다우존스 dow dji djia 다우지수" },
-      "@NKY":    { n:"니케이225", sub:"N225",   ex:"도쿄증권거래소", src:"tc", id:"gzN225",   mkt:"JP", dg:2, fut:"@N225", alias:"니케이 닛케이 nikkei n225 nky 일경" },
-      "@SSEC":   { n:"상해종합",  sub:"SSE",    ex:"상해증권거래소", src:"tc", id:"sh000001", mkt:"CN", dg:2, kl:"fqkline", alias:"상해 상하이 shanghai sse ssec 000001 상증" },
+      // 증시 지수 = 현물 지수 (src "cash" · 거래소 장 시간에만 움직임). 시세 코드 두 곳 (확인: 2026-10-22)
+      //   tc = 텐센트 증권 공개 시세 (qt.gtimg.cn) — 있으면 시세는 이것 먼저
+      //   em = 동방재부(Eastmoney) 공개 시세 (push2.eastmoney.com) — 일별 차트는 이것 먼저, 시세는 tc 가 없거나 안 될 때
+      //   kl = em 차트가 안 될 때 텐센트 일별 차트 받는 방법 (kline·fqkline)
+      //   mkt = 장 시간·휴장일을 따를 시장 (KR·CN·JP·US = 위 휴장 달력, 그 밖은 아래 markets), ex = 거래소(표시용)
+      //   fut = 같은 지수의 24시간 선물, alias = 찾기용 다른 이름 / 세계 증시 목록(눌러서 넣기·빼기)은 아래 world
+      "@KOSPI":  { n:"코스피",       sub:"KOSPI",          ex:"한국거래소",           src:"cash", tc:"gzKS11",   em:"100.KS11",     mkt:"KR", dg:2, fut:"@KR200", alias:"코스피 kospi ks11 종합주가지수" },
+      "@KOSDAQ": { n:"코스닥",       sub:"KOSDAQ",         ex:"한국거래소",           src:"cash", tc:"gzKOSDAQ",                     mkt:"KR", dg:2, alias:"코스닥 kosdaq kq11" },
+      "@KS200":  { n:"코스피200",    sub:"KOSPI 200",      ex:"한국거래소",           src:"cash",                em:"100.KOSPI200", mkt:"KR", dg:2, fut:"@KR200", alias:"코스피200 kospi200 ks200 k200" },
+      "@DJI":    { n:"다우",         sub:"DJIA",           ex:"미국 뉴욕",            src:"cash", tc:"usDJI",    em:"100.DJIA",     mkt:"US", dg:2, fut:"@US30", kl:"kline", alias:"다우존스 dow dji djia 다우지수" },
+      "@IXIC":   { n:"나스닥",       sub:"나스닥 종합",    ex:"미국 나스닥",          src:"cash", tc:"usIXIC",   em:"100.NDX",      mkt:"US", dg:2, kl:"kline", alias:"나스닥 nasdaq ixic comp 나스닥종합 나스닥지수" },
+      "@INX":    { n:"S&P500",       sub:"S&P 500",        ex:"미국 뉴욕",            src:"cash", tc:"usINX",    em:"100.SPX",      mkt:"US", dg:2, fut:"@SPX", kl:"kline", alias:"에스앤피 snp sp500 spx gspc inx" },
+      "@NDX100": { n:"나스닥100",    sub:"NASDAQ-100",     ex:"미국 나스닥",          src:"cash", tc:"usNDX",    em:"100.NDX100",   mkt:"US", dg:2, fut:"@NDX", alias:"나스닥100 nasdaq100 ndx nq100" },
+      "@NKY":    { n:"니케이225",    sub:"N225",           ex:"도쿄증권거래소",       src:"cash", tc:"gzN225",   em:"100.N225",     mkt:"JP", dg:2, fut:"@N225", alias:"니케이 닛케이 nikkei n225 nky 일경 일본" },
+      "@TWII":   { n:"대만 가권",    sub:"TAIEX",          ex:"대만증권거래소",       src:"cash", tc:"gzTWII",   em:"100.TWII",     mkt:"TW", dg:2, alias:"대만 가권 가권지수 taiex twii 타이완" },
+      "@SSEC":   { n:"상해종합",     sub:"SSE",            ex:"상해증권거래소",       src:"cash", tc:"sh000001", em:"1.000001",     mkt:"CN", dg:2, kl:"fqkline", alias:"상해 상하이 shanghai sse ssec 000001 상증 중국" },
+      "@SZSE":   { n:"선전성분",     sub:"SZSE",           ex:"선전증권거래소",       src:"cash", tc:"sz399001", em:"0.399001",     mkt:"CN", dg:2, kl:"fqkline", alias:"선전 심천 shenzhen szse 399001 중국" },
+      "@CSI300": { n:"CSI300",       sub:"호심300",        ex:"상해·선전",            src:"cash", tc:"sh000300", em:"1.000300",     mkt:"CN", dg:2, kl:"fqkline", alias:"csi300 호심300 후선300 hs300 000300 중국" },
+      "@CHINEXT":{ n:"창업판",       sub:"ChiNext",        ex:"선전증권거래소",       src:"cash", tc:"sz399006", em:"0.399006",     mkt:"CN", dg:2, kl:"fqkline", alias:"창업판 차이넥스트 chinext 399006 중국" },
+      "@STAR50": { n:"과창판50",     sub:"STAR 50",        ex:"상해증권거래소",       src:"cash", tc:"sh000688", em:"1.000688",     mkt:"CN", dg:2, kl:"fqkline", alias:"과창판 커촹반 star50 star 000688 중국" },
+      "@A50":    { n:"중국 A50",     sub:"FTSE China A50", ex:"FTSE 러셀",            src:"cash",                em:"100.XIN9",     mkt:"CN", dg:2, alias:"a50 중국a50 ftse china xin9 차이나" },
+      "@HSI":    { n:"항셍",         sub:"HSI",            ex:"홍콩거래소",           src:"cash", tc:"hkHSI",    em:"100.HSI",      mkt:"HK", dg:2, kl:"fqkline", alias:"항셍 hangseng hsi 홍콩" },
+      "@HSCEI":  { n:"홍콩H지수",    sub:"HSCEI",          ex:"홍콩거래소",           src:"cash", tc:"hkHSCEI",  em:"100.HSCEI",    mkt:"HK", dg:2, kl:"fqkline", alias:"홍콩h h지수 hscei 항셍h 항셍중국기업 홍콩" },
+      "@HSTECH": { n:"항셍테크",     sub:"HSTECH",         ex:"홍콩거래소",           src:"cash", tc:"hkHSTECH", em:"124.HSTECH",   mkt:"HK", dg:2, kl:"fqkline", alias:"항셍테크 hstech 홍콩테크 홍콩" },
+      "@SENSEX": { n:"인도 센섹스",  sub:"SENSEX",         ex:"봄베이증권거래소",     src:"cash",                em:"100.SENSEX",   mkt:"IN", dg:2, alias:"인도 센섹스 sensex bse india" },
+      "@VNI":    { n:"베트남 VN",    sub:"VN-Index",       ex:"호찌민증권거래소",     src:"cash",                em:"100.VNINDEX",  mkt:"VN", dg:2, alias:"베트남 vn지수 vnindex vietnam 호치민" },
+      "@JKSE":   { n:"인도네시아",   sub:"JCI",            ex:"인도네시아증권거래소", src:"cash",                em:"100.JKSE",     mkt:"ID", dg:2, alias:"인도네시아 자카르타 jkse jci indonesia" },
+      "@STI":    { n:"싱가포르 STI", sub:"STI",            ex:"싱가포르거래소",       src:"cash",                em:"100.STI",      mkt:"SG", dg:2, alias:"싱가포르 sti straits singapore" },
+      "@KLCI":   { n:"말레이시아",   sub:"FBM KLCI",       ex:"말레이시아거래소",     src:"cash",                em:"100.KLSE",     mkt:"MY", dg:2, alias:"말레이시아 klci klse malaysia" },
+      "@SET":    { n:"태국 SET",     sub:"SET",            ex:"태국증권거래소",       src:"cash",                em:"100.SET",      mkt:"TH", dg:2, alias:"태국 set thailand 방콕" },
+      "@ASX200": { n:"호주 ASX200",  sub:"S&P/ASX 200",    ex:"호주증권거래소",       src:"cash",                em:"100.AS51",     mkt:"AU", dg:1, alias:"호주 asx asx200 as51 australia" },
+      "@SX5E":   { n:"유로스톡스50", sub:"EURO STOXX 50",  ex:"유로존 (STOXX)",       src:"cash",                em:"100.SX5E",     mkt:"EU", dg:2, alias:"유로스톡스 유로스탁스 eurostoxx stoxx50 sx5e 유럽" },
+      "@DAX":    { n:"독일 DAX",     sub:"DAX 40",         ex:"프랑크푸르트 Xetra",   src:"cash",                em:"100.GDAXI",    mkt:"DE", dg:2, alias:"독일 dax gdaxi germany 닥스" },
+      "@FTSE":   { n:"영국 FTSE",    sub:"FTSE 100",       ex:"런던증권거래소",       src:"cash",                em:"100.FTSE",     mkt:"UK", dg:2, alias:"영국 ftse ftse100 uk 풋시" },
+      "@CAC":    { n:"프랑스 CAC",   sub:"CAC 40",         ex:"유로넥스트 파리",      src:"cash",                em:"100.FCHI",     mkt:"FR", dg:2, alias:"프랑스 cac cac40 fchi france" },
+      "@IBEX":   { n:"스페인 IBEX",  sub:"IBEX 35",        ex:"마드리드증권거래소",   src:"cash",                em:"100.IBEX",     mkt:"ES", dg:2, alias:"스페인 ibex ibex35 spain" },
+      "@MIB":    { n:"이탈리아 MIB", sub:"FTSE MIB",       ex:"이탈리아증권거래소",   src:"cash",                em:"100.MIB",      mkt:"IT", dg:2, alias:"이탈리아 mib ftsemib italy" },
+      "@SMI":    { n:"스위스 SMI",   sub:"SMI",            ex:"스위스증권거래소 SIX", src:"cash",                em:"100.SSMI",     mkt:"CH", dg:2, alias:"스위스 smi ssmi swiss" },
+      "@TSX":    { n:"캐나다 TSX",   sub:"S&P/TSX",        ex:"토론토증권거래소",     src:"cash",                em:"100.TSX",      mkt:"CA", dg:2, alias:"캐나다 tsx gsptse canada 토론토" },
+      "@IBOV":   { n:"브라질",       sub:"Ibovespa",       ex:"브라질증권거래소 B3",  src:"cash",                em:"100.BVSP",     mkt:"BR", dg:0, alias:"브라질 보베스파 ibovespa ibov bvsp brazil" },
       // 지수 선물 (24시간 무기한 선물 가격): hl = 하이퍼리퀴드 trade.xyz, gate = 게이트
       "@KR200": { n:"코스피200", sub:"KR200 · 선물", src:"hl",   id:"xyz:KR200",  dg:2, alias:"코스피 kospi kospi200 ks200" },
       "@US30":  { n:"다우",      sub:"US30 · 선물",  src:"gate", id:"US30_USDT",  dg:0, alias:"다우존스 dow dji ym us30" },
       "@NDX":   { n:"나스닥100", sub:"XYZ100 · 선물", src:"hl",  id:"xyz:XYZ100", dg:1, alias:"나스닥 nasdaq ndx nq nas100" },
       "@SPX":   { n:"S&P500",    sub:"SP500 · 선물", src:"hl",   id:"xyz:SP500",  dg:2, alias:"에스앤피 sp500 spx es us500" },
       "@N225":  { n:"니케이225", sub:"JP225 · 선물", src:"hl",   id:"xyz:JP225",  dg:0, alias:"니케이 닛케이 nikkei n225 jp225" }
+    },
+    // 시세 편집 화면의 '세계 증시' — 눌러서 지금 탭에 넣기·빼기 (순서대로 보임)
+    world: [
+      { g:"한국",        items:["@KOSPI","@KOSDAQ","@KS200"] },
+      { g:"미국",        items:["@DJI","@IXIC","@INX","@NDX100"] },
+      { g:"일본·대만",   items:["@NKY","@TWII"] },
+      { g:"중국",        items:["@SSEC","@SZSE","@CSI300","@CHINEXT","@STAR50","@A50"] },
+      { g:"홍콩",        items:["@HSI","@HSCEI","@HSTECH"] },
+      { g:"아시아·호주", items:["@SENSEX","@VNI","@JKSE","@STI","@KLCI","@SET","@ASX200"] },
+      { g:"유럽",        items:["@SX5E","@DAX","@FTSE","@CAC","@IBEX","@MIB","@SMI"] },
+      { g:"미주",        items:["@TSX","@IBOV"] }
+    ],
+    // 증시 지수 장 시간 — 한국·중국·일본·미국은 위 휴장 달력을 따름. 여기 시장은 정규장 시간(현지 시각)만 앎:
+    //   휴장일 달력이 없어서 장 시간이 20분 넘게 지났는데 오늘 거래 기록이 없으면 '휴장 추정'으로 표시
+    //   lunch = 점심 휴장, fri = 금요일만 다른 점심 휴장, usStdClose = 미국이 서머타임이 아닐 때(11~3월) 마감
+    markets: {
+      TW: { name:"대만",       tz:"Asia/Taipei",       open:"09:00", close:"13:30" },
+      HK: { name:"홍콩",       tz:"Asia/Hong_Kong",    open:"09:30", close:"16:00", lunch:["12:00","13:00"] },
+      IN: { name:"인도",       tz:"Asia/Kolkata",      open:"09:15", close:"15:30" },
+      VN: { name:"베트남",     tz:"Asia/Ho_Chi_Minh",  open:"09:00", close:"14:45", lunch:["11:30","13:00"] },
+      ID: { name:"인도네시아", tz:"Asia/Jakarta",      open:"09:00", close:"16:00", lunch:["12:00","13:30"], fri:["11:30","14:00"] },
+      SG: { name:"싱가포르",   tz:"Asia/Singapore",    open:"09:00", close:"17:00", lunch:["12:00","13:00"] },
+      MY: { name:"말레이시아", tz:"Asia/Kuala_Lumpur", open:"09:00", close:"17:00", lunch:["12:30","14:30"] },
+      TH: { name:"태국",       tz:"Asia/Bangkok",      open:"10:00", close:"16:30", lunch:["12:30","14:30"] },
+      AU: { name:"호주",       tz:"Australia/Sydney",  open:"10:00", close:"16:00" },
+      EU: { name:"유로존",     tz:"Europe/Berlin",     open:"09:00", close:"17:30" },
+      DE: { name:"독일",       tz:"Europe/Berlin",     open:"09:00", close:"17:30" },
+      UK: { name:"영국",       tz:"Europe/London",     open:"08:00", close:"16:30" },
+      FR: { name:"프랑스",     tz:"Europe/Paris",      open:"09:00", close:"17:30" },
+      ES: { name:"스페인",     tz:"Europe/Madrid",     open:"09:00", close:"17:30" },
+      IT: { name:"이탈리아",   tz:"Europe/Rome",       open:"09:00", close:"17:30" },
+      CH: { name:"스위스",     tz:"Europe/Zurich",     open:"09:00", close:"17:30" },
+      CA: { name:"캐나다",     tz:"America/Toronto",   open:"09:30", close:"16:00" },
+      BR: { name:"브라질",     tz:"America/Sao_Paulo", open:"10:00", close:"17:00", usStdClose:"18:00" }
     },
     // 원화로 바꿔 보여줄 종목 (한국 주식). 설정에서 추가한 한국 주식은 자동으로 여기에 더해짐
     krw: ["SAMSUNG","SKHYNIX","HYUNDAI","NAVER","LGELECTRONICS","HANMI","SAMSUNGEM","KODEX200"],

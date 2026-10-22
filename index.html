@@ -425,6 +425,23 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .q-msg.ok { color: var(--ok); } .q-msg.bad { color: var(--bad); }
 .q-reset { margin-top: 6px; font-size: 12px; font-weight: 600; color: var(--muted); padding: 3px 0; }
 .q-reset:hover { color: var(--bad); }
+/* 세계 증시: 지역별 지수 칩 — 눌러서 지금 탭에 넣기·빼기 */
+.q-world { margin: 0 0 6px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+.q-wh { display: flex; align-items: center; gap: 6px; width: calc(100% + 12px); margin: 0 -6px; padding: 5px 6px; border-radius: 8px; text-align: left; }
+.q-wh:hover { background: var(--bg2); }
+.q-wh b { font-size: 13px; font-weight: 700; white-space: nowrap; }
+.q-wh span { flex: 1; min-width: 0; font-size: 11.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.q-wh svg { width: 15px; height: 15px; flex: none; fill: none; stroke: var(--muted); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: transform .15s; }
+.q-world.open .q-wh svg { transform: rotate(180deg); }
+.q-wb { padding: 0 0 2px; }
+.q-wl { margin: 6px 0 3px; font-size: 11px; font-weight: 700; color: var(--muted); }
+.q-wc { display: flex; flex-wrap: wrap; gap: 4px; }
+.q-chip { display: inline-flex; align-items: center; gap: 2px; height: 26px; padding: 0 9px; border-radius: 13px; border: 1px solid var(--line);
+  background: var(--bg); color: var(--text2); font-size: 12px; font-weight: 600; white-space: nowrap; }
+.q-chip:hover { border-color: color-mix(in srgb, var(--accent) 60%, var(--line)); color: var(--text); }
+.q-chip.on { background: color-mix(in srgb, var(--accent) 13%, var(--bg)); border-color: color-mix(in srgb, var(--accent) 50%, transparent); color: var(--accent); font-weight: 700; padding-left: 6px; }
+.q-chip svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+.q-foot { gap: 2px; flex-wrap: wrap; }
 :root { --q-up: #d4333b; --q-dn: #2d6fd6; }
 :root[data-theme="dark"] { --q-up: #ff6b6b; --q-dn: #72a6ff; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --q-up: #ff6b6b; --q-dn: #72a6ff; } }
@@ -457,6 +474,10 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   .q-add input { font-size: 16px; height: 40px; }      /* 아이폰: 16px 미만이면 입력할 때 화면이 확대됨 */
   .q-sug button { padding: 7px 6px; }
   .q-link, .q-reset { padding: 8px 6px; }
+  .q-wh { padding: 9px 6px; }
+  .q-chip { height: 34px; padding: 0 12px; border-radius: 17px; font-size: 13px; }
+  .q-chip.on { padding-left: 9px; }
+  .q-wc { gap: 6px; }
   .seg button { height: 36px; }
 }
 
@@ -703,7 +724,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
         <h4>24시간 시세 (왼쪽)</h4>
         <label class="switch">시세 보이기 <input type="checkbox" id="optQuotes"></label>
         <div class="seg" style="margin-top:4px"><button id="optQEdit">종목 추가 · 편집</button></div>
-        <p class="hint">탭(전체·한국·미국·일본)마다 종목·ETF를 따로 넣을 수 있습니다. 증시 지수(코스피·코스닥·다우·니케이225·상해종합)는 거래소 장 시간에만 움직이고 줄마다 장 상태(장중·점심·마감·휴장)를 보여 줍니다(텐센트 증권 공개 시세). 지수 선물·종목은 24시간 무기한 선물(실제 거래소 시세와 다르고 주말에도 움직임), 환율(원/달러·원/엔·원/위안·달러/엔)은 Coinbase 공개 환율(1분마다)입니다.</p>
+        <p class="hint">탭(전체·한국·미국·일본)마다 종목·ETF를 따로 넣을 수 있습니다. 증시 지수(코스피·나스닥·니케이·항셍·DAX 등 세계 증시 34개 — 편집 화면 '세계 증시'에서 눌러서 넣기·빼기)는 거래소 장 시간에만 움직이고 줄마다 장 상태(장중·점심·마감·휴장)를 보여 줍니다(텐센트 증권·동방재부 공개 시세). 지수 선물·종목은 24시간 무기한 선물(실제 거래소 시세와 다르고 주말에도 움직임), 환율(원/달러·원/엔·원/위안·달러/엔)은 Coinbase 공개 환율(1분마다)입니다.</p>
       </section>
       <section>
         <h4>실시간 시계 (한국 · 미국 뉴욕)</h4>
@@ -832,6 +853,8 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 
   /* ── 시간대 (거래소 현지 날짜·시각) ── */
   var TZ = { KR: 'Asia/Seoul', CN: 'Asia/Shanghai', JP: 'Asia/Tokyo', US: 'America/New_York' };
+  var MKT = (D.quotes && D.quotes.markets) || {};      // 휴장 달력 없는 시장(홍콩·대만·유럽 등): 시간대 · 정규장 시간만
+  Object.keys(MKT).forEach(function (c) { if (!TZ[c] && MKT[c] && MKT[c].tz) TZ[c] = MKT[c].tz; });
   var fmtCache = {};
   function partsIn(tz, t) {
     var f = fmtCache[tz] || (fmtCache[tz] = new Intl.DateTimeFormat('en-US', {
@@ -863,6 +886,14 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   function sessionOf(c, k) {
     var s = dayState(c, k);
     if (s.state === 'weekend' || s.state === 'closed' || s.state === 'tent') return null;
+    var m = MKT[c];
+    if (m && !D.countries[c]) {                          // 달력 없는 시장: 평일 = 정규장 (휴장은 시세로 추정)
+      var lunch = m.fri && fromKey(k).getDay() === 5 ? m.fri : m.lunch, close = m.close;
+      if (m.usStdClose) {                                // 브라질: 미국이 서머타임이 아니면 마감이 1시간 늦음
+        try { if (offsetMs(TZ.US, instantAt(TZ[c], k, '12:00')) === -5 * 36e5) close = m.usStdClose; } catch (e) {}
+      }
+      return lunch ? { open: m.open, close: close, lunch: lunch } : { open: m.open, close: close };
+    }
     var ev = (byDay[k] || []).filter(function (e) { return e.c === c && (e.k === 'time' || e.k === 'early'); })[0];
     if (c === 'KR') return { open: (ev && ev.open) || '09:00', close: (ev && ev.close) || '15:30' };
     if (c === 'JP') return { open: '09:00', close: '15:30', lunch: ['11:30', '12:30'] };   // 도쿄증권거래소 (2024-11-05부터 15:30 마감)
@@ -944,6 +975,18 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     r.at = nx ? instantAt(tz, nx.k, nx.s.open) : 0;
     return r;
   }
+  // 지수 하나의 장 상태: 휴장 달력이 없는 시장은 장 시작 20분이 지났는데 오늘 거래 기록이 없으면 '휴장 추정'
+  function cashStateB(b, now) {
+    var I = IDX[b], c = I.mkt, r = cashState(c, now), d = qData[b];
+    if (D.countries[c] || !r.ses || !d || !d.t) return r;
+    if ((r.st === 'open' || r.st === 'lunch' || r.st === 'post') && now - r.o > 20 * 6e4 && localKey(c, d.t) < r.k) {
+      var nx = nextSession(c, r.k);
+      r.st = 'hol'; r.est = true; r.auc = false; r.p = 0;
+      r.why = '오늘 거래 기록 없음';
+      r.at = nx ? instantAt(TZ[c], nx.k, nx.s.open) : 0;
+    }
+    return r;
+  }
   // 한국 시각으로 짧게: 오늘 'HH:MM' · 내일 '내일 HH:MM' · 일주일 안 '월 HH:MM' · 그 뒤 '10/5 HH:MM'
   function kstShort(t, now) {
     var p = partsIn(TZ.KR, t), nk = partsIn(TZ.KR, now).key, hm = pad(p.h) + ':' + pad(p.mi);
@@ -966,7 +1009,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
       case 'lunch': return ['lunch', '점심 ~' + at];
       case 'pre': return r.auc ? ['auc', '동시호가 ~' + at] : ['pre', at ? at + ' 개장' : '장 전'];
       case 'post': return ['post', at ? at + ' 개장' : '마감'];
-      case 'hol': return ['hol', '휴장 · ' + r.why];
+      case 'hol': return ['hol', r.est ? '휴장 추정' : '휴장 · ' + r.why];
       default: return ['wk', at ? at + ' 개장' : '주말'];
     }
   }
@@ -1454,14 +1497,16 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   /* ── 24시간 시세 (바이낸스 USDⓈ-M 무기한 선물) ── */
   var Q = D.quotes || {};
   Q.tabs = Q.tabs || []; Q.names = Q.names || {}; Q.krw = Q.krw || [];
-  var IDX = Q.indices || {};               // '@KOSPI' 같은 현물 지수(src tc) + '@KR200' 같은 지수 선물
+  var IDX = Q.indices || {};               // '@KOSPI' 같은 증시 지수(현물, src cash) + '@KR200' 같은 지수 선물
   var Q_PANEL_W = 263;                     // 패널 너비 + 경계선
-  var Q_MAX = 30;                          // 탭 하나에 넣을 수 있는 종목 수
+  var Q_MAX = 40;                          // 탭 하나에 넣을 수 있는 종목 수
   var Q_API = 'https://fapi.binance.com/fapi/v1/';
   var Q_TYPE = { KR_EQUITY: '한국 상장', EQUITY: '미국 상장', HK_EQUITY: '홍콩 상장', CN_EQUITY: '중국 상장',
                  COMMODITY: '원자재', FX: '외환', PREMARKET: '상장 전', COIN: '코인', INDEX: '지수 선물', CASH: '증시 지수' };
   var IC_UP = '<svg viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6"/></svg>';
   var IC_X = '<svg viewBox="0 0 24 24"><path d="M7 7l10 10M17 7L7 17"/></svg>';
+  var IC_CHK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+  var IC_DN = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
   var qOn = store.get('quotes', true);
   var qTab = store.get('qTab', 'all');
   var qLists = store.get('qLists', {});    // 사용자가 고친 탭만 저장 { kr: ['SAMSUNG', ...] }
@@ -1469,6 +1514,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   var qData = {}, qRows = {};
   var qWs = null, qWsKey = '', qPollT = null, qRetryT = null, qStT = 0, qMode = 'idle', qLastT = 0, qCatP = null;
   var qEdit = false, qQuery = '', qHot = 0;
+  var qWorldOpen = store.get('qWorld', false);   // 편집 화면의 '세계 증시' 펼침
 
   (function sanitize() {
     if (!qLists || typeof qLists !== 'object') qLists = {};
@@ -1488,10 +1534,21 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     if (!store.get('qIdxV2', false)) {       // 현물 지수(코스피·코스닥·다우·니케이·상해) 생기기 전에 고쳐 둔 탭에도 기본 위치에 넣음 (한 번만)
       Q.tabs.forEach(function (t) {
         var l = qLists[t.id]; if (!Array.isArray(l)) return;
-        var add = t.items.filter(function (b) { return IDX[b] && IDX[b].src === 'tc' && l.indexOf(b) < 0; });
+        var add = t.items.filter(function (b) { return qIsCash(b) && l.indexOf(b) < 0; });
         if (add.length) qLists[t.id] = add.concat(l).slice(0, Q_MAX);
       });
       store.set('qLists', qLists); store.set('qIdxV2', true);
+      store.set('qIdxV3', true);             // 위에서 나스닥도 같이 들어감
+    }
+    if (!store.get('qIdxV3', false)) {       // 나스닥(현물) 생기기 전에 고쳐 둔 탭에도 넣음: 다우 바로 뒤 (한 번만)
+      Q.tabs.forEach(function (t) {
+        var l = qLists[t.id], b = '@IXIC';
+        if (!Array.isArray(l) || !IDX[b] || t.items.indexOf(b) < 0 || l.indexOf(b) >= 0) return;
+        var at = l.indexOf('@DJI');
+        if (at >= 0) l.splice(at + 1, 0, b); else l.unshift(b);
+        qLists[t.id] = l.slice(0, Q_MAX);
+      });
+      store.set('qLists', qLists); store.set('qIdxV3', true);
     }
     if (qCat && (typeof qCat !== 'object' || !qCat.f)) qCat = null;
     if (!Q.tabs.some(function (t) { return t.id === qTab; })) qTab = Q.tabs.length ? Q.tabs[0].id : 'all';
@@ -1510,9 +1567,11 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     });
     return out;
   }
-  function qType(b) { return IDX[b] ? (IDX[b].src === 'tc' ? 'CASH' : 'INDEX') : (qCat && qCat.f[b]) || (Q.krw.indexOf(b) >= 0 ? 'KR_EQUITY' : ''); }
+  function qType(b) { return IDX[b] ? (qIsCash(b) ? 'CASH' : 'INDEX') : (qCat && qCat.f[b]) || (Q.krw.indexOf(b) >= 0 ? 'KR_EQUITY' : ''); }
   function qIsIdx(b) { return !!IDX[b]; }
-  function qIsCash(b) { return !!(IDX[b] && IDX[b].src === 'tc'); }   // 장 시간에만 움직이는 현물 지수
+  function qIsCash(b) { return !!(IDX[b] && (IDX[b].src === 'cash' || IDX[b].src === 'tc')); }   // 장 시간에만 움직이는 현물 지수 ('tc' = 예전 data.js)
+  function cashTc(I) { return I.tc || (I.src === 'tc' ? I.id : ''); }       // 텐센트 시세 코드
+  function qHasHist(b) { var I = IDX[b]; return !!(I && (I.em || I.kl)); }  // 일별 차트를 받을 곳이 있는가
   function qBin(list) { return list.filter(function (b) { return b.charAt(0) !== '@'; }); }   // 바이낸스에서 받는 것만
   function qIsKrw(b) { return qType(b) === 'KR_EQUITY'; }
   function qName(b) {
@@ -1522,7 +1581,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     return { n: b, sub: Q_TYPE[qType(b)] || '' };
   }
   function qSubFull(b, nm) {        // 편집 화면의 작은 글씨: 기호 · 설명
-    if (IDX[b]) return nm.sub + ({ hl: ' · 하이퍼리퀴드', gate: ' · 게이트', tc: ' · 현물 지수 (장 시간만)' }[IDX[b].src] || '');
+    if (IDX[b]) return nm.sub + (qIsCash(b) ? ' · ' + (IDX[b].ex || '') + ' 현물 지수 (장 시간만)' : { hl: ' · 하이퍼리퀴드', gate: ' · 게이트' }[IDX[b].src] || '');
     if (nm.sub && nm.sub.indexOf(b) >= 0) return nm.sub;
     var extra = nm.sub || Q_TYPE[qType(b)] || '';
     return extra ? b + ' · ' + extra : b;
@@ -1582,7 +1641,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
       lunch: '점심 휴장 · ' + at + ' 재개',
       pre: (r.auc ? '장 시작 동시호가 · ' : '장 전 · ') + at + ' 개장',
       post: '오늘 장 마감' + (at ? ' · 다음 개장 ' + at : ''),
-      hol: '휴장 (' + (r.why || '') + ')' + (at ? ' · 다음 개장 ' + at : ''),
+      hol: (r.est ? '휴장으로 보임 (오늘 거래 기록 없음 · 이 시장 휴장일 달력은 없음)' : '휴장 (' + (r.why || '') + ')') + (at ? ' · 다음 개장 ' + at : ''),
       wk: '주말' + (at ? ' · 다음 개장 ' + at : '')
     }[r.st] || '';
   }
@@ -1593,11 +1652,16 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     if (d) s += '\n지금 ' + qFmt(b, d.c) + ' · 전일 종가 ' + qFmt(b, d.o) + (d.t ? '\n값 기준 ' + kstShort(d.t, now) : '');
     var late = qCashLate(b, r, now);
     if (late) s += ' (' + durText(late) + ' 지연)';
-    return s + '\n출처: 텐센트 증권 공개 시세\n' + (I.kl ? '누르면 차트 · 일별 시세' : '누르면 자세히 (일별 차트 자료는 없음)');
+    return s + '\n출처: ' + cashSrcName(b) + '\n' + (qHasHist(b) ? '누르면 차트 · 일별 시세' : '누르면 자세히 (일별 차트 자료는 없음)');
+  }
+  var CASH_SRC = { tc: '텐센트 증권 공개 시세', em: '동방재부(Eastmoney) 공개 시세' };
+  function cashSrcName(b) {                   // 지금 값을 받은 곳 (아직 없으면 먼저 쓰는 곳)
+    var d = qData[b], I = IDX[b];
+    return CASH_SRC[(d && d.src) || (cashTc(I) ? 'tc' : 'em')];
   }
   function qSesPaint(b, now) {
     var row = qRows[b]; if (!row || !row.ses || !IDX[b]) return;
-    var r = cashState(IDX[b].mkt, now), L = cashLabel(r, now), late = qCashLate(b, r, now);
+    var r = cashStateB(b, now), L = cashLabel(r, now), late = qCashLate(b, r, now);
     if (late) L = ['late', '장중 · ' + durText(late) + ' 지연'];
     var on = r.st === 'open' || r.st === 'lunch', cls = 'q-ses ' + L[0];
     if (row.ses.textContent !== L[1]) row.ses.textContent = L[1];
@@ -1647,7 +1711,8 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     if (krw.length) h += grp(all ? '국내 · 원화 환산' : '원화 환산', '24시간 등락') + rows(krw);
     if (usd.length) h += grp(all ? '해외 · 달러' : '달러', '24시간 등락') + rows(usd);
     if (!list.length) h += '<div class="q-empty">이 탭에 넣은 종목이 없습니다.</div>';
-    h += '<div class="q-foot"><button class="q-link" data-act="edit">＋ 종목 추가 · 편집</button></div>' +
+    h += '<div class="q-foot">' + ((Q.world || []).length ? '<button class="q-link" data-act="world-edit">세계 증시 넣기·빼기</button>' : '') +
+      '<button class="q-link" data-act="edit">＋ 종목 추가 · 편집</button></div>' +
       '<div class="q-cap">' + qCapHtml() + '</div>';
     var body = $('qBody');
     body.innerHTML = h;
@@ -1659,9 +1724,9 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   }
   function qCapHtml() {             // 목록 끝 작은 안내
     var def = qTabDef(qTab), ps;
-    if (qEdit) ps = ['증시 지수 5개(코스피·코스닥·다우·니케이225·상해종합), 지수 선물 5개(코스피200·다우·나스닥100·S&P500·니케이225)와 바이낸스 무기한 선물에 있는 종목을 넣을 수 있습니다.'];
+    if (qEdit) ps = ['세계 증시(현물 지수)는 위 \'세계 증시\'를 눌러 넣고 뺄 수 있습니다. 지수 선물 5개(코스피200·다우·나스닥100·S&P500·니케이225)와 바이낸스 무기한 선물 종목은 이름·기호로 찾아 넣습니다. 한 탭에 ' + Q_MAX + '개까지.'];
     else {
-      ps = ['증시 지수: 거래소 장 시간에만 움직임 · 텐센트 증권 공개 시세 (늦으면 \'지연\' 표시)',
+      ps = ['증시 지수: 거래소 장 시간에만 움직임 · 텐센트 증권·동방재부(Eastmoney) 공개 시세 (늦으면 \'지연\' 표시) · 한·중·일·미 밖의 시장은 휴장일 달력이 없어 거래가 없으면 \'휴장 추정\'',
             '지수 선물·종목: 24시간 무기한 선물 가격 (거래소 시세 아님) · 하이퍼리퀴드·게이트(다우) / 종목 바이낸스'];
       if (def.note) ps.push(def.note);
     }
@@ -1677,6 +1742,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
       '<button class="q-done" data-act="done">완료</button></div>' +
       '<div class="q-add"><input id="qFind" type="text" placeholder="이름·기호로 찾기 (예: 엔비디아, TSLA, 금)" autocomplete="off" spellcheck="false" aria-label="종목 찾기">' +
       '<div class="q-sug" id="qSug"></div><p class="q-msg" id="qMsg"></p></div>';
+    h += qWorldHtml(list);
     h += list.map(function (b, i) {
       var nm = qName(b);
       return '<div class="q-ed-row" data-b="' + esc(b) + '"><div class="q-name"><b>' + esc(nm.n) + '</b><small>' + esc(qSubFull(b, nm)) + '</small></div>' +
@@ -1688,6 +1754,47 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     $('qBody').innerHTML = h;
     $('qFind').value = qQuery;
     qRenderSug();
+  }
+  // 세계 증시: 지역별 지수를 눌러서 지금 탭에 넣기·빼기 (data.js 의 world)
+  function qWorldHtml(list) {
+    var n = 0, all = 0;
+    var body = (Q.world || []).map(function (g) {
+      var items = (g.items || []).filter(function (b) { return qIsCash(b); });
+      if (!items.length) return '';
+      return '<div class="q-wg"><div class="q-wl">' + esc(g.g) + '</div><div class="q-wc">' + items.map(function (b) {
+        var I = IDX[b], on = list.indexOf(b) >= 0; all++; if (on) n++;
+        return '<button class="q-chip' + (on ? ' on' : '') + '" data-tog="' + esc(b) + '" aria-pressed="' + on + '" title="' +
+          esc(I.n + ' (' + I.sub + ') · ' + (I.ex || '') + (on ? '\n누르면 이 탭에서 빼기' : '\n누르면 이 탭에 넣기')) + '">' + (on ? IC_CHK : '') + esc(I.n) + '</button>';
+      }).join('') + '</div></div>';
+    }).join('');
+    if (!all) return '';
+    return '<div class="q-world' + (qWorldOpen ? ' open' : '') + '" id="qWorld"><button class="q-wh" data-act="world" aria-expanded="' + qWorldOpen + '">' +
+      '<b>세계 증시</b><span>' + (n ? n + '개 넣음 · ' : '') + '눌러서 넣기·빼기</span>' + IC_DN + '</button>' +
+      (qWorldOpen ? '<div class="q-wb">' + body + '</div>' : '') + '</div>';
+  }
+  function qWorldToggle(b) {                // 칩 누름: 넣기 ↔ 빼기 (스크롤 자리 그대로, 검색칸으로 안 옮김)
+    var l = qList(qTab), i = l.indexOf(b), nm = IDX[b].n;
+    if (i >= 0) { l.splice(i, 1); qSetList(qTab, l); }
+    else {
+      if (l.length >= Q_MAX) { qMsg('한 탭에 ' + Q_MAX + '개까지 넣을 수 있습니다.', 'bad'); return; }
+      l.push(b); qSetList(qTab, l);
+    }
+    qRerender('.q-chip[data-tog="' + b + '"]');
+    qMsg(nm + (i >= 0 ? ' 뺐습니다.' : ' 넣었습니다.'), i >= 0 ? '' : 'ok');
+  }
+  function qWorldSet(open) {
+    qWorldOpen = !!open; store.set('qWorld', qWorldOpen);
+    qRerender('#qWorld .q-wh');
+  }
+  function qRerender(focusSel) {            // 다시 그려도 스크롤 자리·포커스 그대로 (focusSel: 대신 포커스 줄 곳)
+    var body = $('qBody'), y = body.scrollTop, a = document.activeElement, sel = focusSel || null;
+    if (!sel && a && body.contains(a)) sel = a.id ? '#' + a.id : a.getAttribute('data-tog') ? '.q-chip[data-tog="' + a.getAttribute('data-tog') + '"]' : a.classList.contains('q-wh') ? '#qWorld .q-wh' : null;
+    qRender(); body.scrollTop = y;
+    var el = sel && body.querySelector(sel);
+    if (el) {
+      el.focus({ preventScroll: true });
+      if (el.id === 'qFind') { var n = el.value.length; try { el.setSelectionRange(n, n); } catch (e) {} }
+    }
   }
   function qNorm(s) { return String(s || '').toLowerCase().replace(/[\s·.\-_/()]/g, ''); }
   function qPool() { return Object.keys(IDX).concat(qCat ? Object.keys(qCat.f) : Object.keys(Q.names)); }
@@ -1759,13 +1866,16 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     l.splice(i, 1); qSetList(qTab, l); qRender(); qMsg(qName(b).n + ' 뺐습니다.');
   }
   function qReset() { delete qLists[qTab]; store.set('qLists', qLists); qRender(); qMsg('기본 종목으로 되돌렸습니다.', 'ok'); }
-  function qSetEdit(on) {
+  function qSetEdit(on, world) {
     qEdit = !!on; qQuery = ''; qHot = 0;
     qRender();
+    $('qBody').scrollTop = 0;
     if (qEdit) {
-      $('qFind').focus();
+      var w = world && $('qWorld');
+      if (w) { var c1 = w.querySelector('.q-chip'); if (c1) c1.focus({ preventScroll: true }); }   // 완료·찾기 칸이 보이게 맨 위 그대로
+      else $('qFind').focus();
       var before = qCat;
-      qLoadCat().then(function (c) { if (qEdit && c !== before) qRender(); });
+      qLoadCat().then(function (c) { if (qEdit && c !== before) qRerender(); });
     } else {
       if (qWs && !qCovered()) { qCloseWs(); qConnect(); }   // 새로 넣은 종목까지 실시간으로
       var miss = qList(qTab).filter(function (b) { return !qData[b]; });
@@ -1786,11 +1896,15 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   $('qBody').addEventListener('click', function (e) {
     var s = e.target.closest('[data-add]');
     if (s) { qAdd(s.getAttribute('data-add')); return; }
+    var tg = e.target.closest('[data-tog]');
+    if (tg) { qWorldToggle(tg.getAttribute('data-tog')); return; }
     var qr = e.target.closest('.q-row');
     if (qr && !qEdit) { dvOpen(qr.getAttribute('data-b')); return; }   // 종목 누르면 차트 · 일별 시세
     var a = e.target.closest('[data-act]'); if (!a) return;
     var row = a.closest('[data-b]'), b = row && row.getAttribute('data-b'), act = a.getAttribute('data-act');
     if (act === 'edit') qSetEdit(true);
+    else if (act === 'world-edit') { qWorldOpen = true; store.set('qWorld', true); qSetEdit(true, true); }
+    else if (act === 'world') qWorldSet(!qWorldOpen);
     else if (act === 'done') qSetEdit(false);
     else if (act === 'up') qMoveUp(b);
     else if (act === 'del') qDel(b);
@@ -1944,7 +2058,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     var tc = want.filter(qIsCash);
     if (hl.length) { hlSnapshot(hl); hlConnect(hl); }
     if (gt.length) { gtLoad(gt); gtT = setInterval(function () { gtLoad(gt); }, 5000); }
-    if (tc.length) { tcOn = true; tcRun(tc, ++tcGen); qSesT = setInterval(qSesAll, 15000); }
+    if (tc.length) { tcOn = true; cashRun(tc, ++tcGen); qSesT = setInterval(qSesAll, 15000); }
   }
   // 하이퍼리퀴드: 한 번에 받아 두고(REST) 실시간은 WebSocket(activeAssetCtx)
   function hlSnapshot(list) {
@@ -2010,53 +2124,84 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     });
   }
 
-  /* ── 증시 지수 (현물): 텐센트 증권 공개 시세 qt.gtimg.cn — 장중 10초마다, 장 밖에는 1분마다 ──
-     응답은 GBK 글자 'v_코드="필드~필드~…";' — 숫자·시각만 씀 (실행하지 않고 글자로만 읽음) */
+  /* ── 증시 지수 (현물) — 장중 10초마다, 장 밖에는 1분마다 ──
+     텐센트 증권 qt.gtimg.cn (tc 코드가 있으면 먼저) · 동방재부(Eastmoney) push2.eastmoney.com (em 코드: tc 가 없거나 안 될 때)
+     텐센트는 GBK 글자 'v_코드="필드~필드~…";', 동방재부는 JSON — 숫자·시각만 씀 (실행하지 않고 글자로만 읽음) */
   var TC_API = 'https://qt.gtimg.cn/q=';
-  function tcTime(s, tz) {                   // 응답 시각 → ms ('2026-10-20 14:32:10' 또는 '20261020161400'; gz·sh = 베이징, us = 뉴욕)
-    var m = String(s || '').match(/^(\d{4})-?(\d\d)-?(\d\d)[ T]?(\d\d):?(\d\d):?(\d\d)/);
+  var EM_API = 'https://push2.eastmoney.com/api/qt/ulist.np/get?fltt=2&fields=f2,f12,f13,f15,f16,f17,f18,f124&secids=';
+  var EM_KL = 'https://push2his.eastmoney.com/api/qt/stock/kline/get?fields1=f1,f2,f3&fields2=f51,f52,f53,f54,f55,f56&klt=101&fqt=0&end=20500101&lmt=1000&secid=';
+  function tcTime(s, tz) {                   // 응답 시각 → ms ('2026-10-20 14:32:10' · '20261020161400' · '2026/10/22 11:59:59'; gz·sh·sz·hk = 베이징·홍콩, us = 뉴욕)
+    var m = String(s || '').match(/^(\d{4})[-\/]?(\d\d)[-\/]?(\d\d)[ T]?(\d\d):?(\d\d):?(\d\d)/);
     if (!m) return 0;
     try { return instantAt(tz, m[1] + '-' + m[2] + '-' + m[3], m[4] + ':' + m[5]) + (+m[6]) * 1000; } catch (e) { return 0; }
   }
+  function cashSet(b, src, c, o, t, x) {     // 값 하나 저장 + 줄 다시 그림
+    if (!(c > 0) || !(o > 0)) return false;
+    var had = !!qData[b];
+    qData[b] = { c: c, o: o, t: t > 0 ? t : 0, op: x.op > 0 ? x.op : 0, hi: x.hi > 0 ? x.hi : 0, lo: x.lo > 0 ? x.lo : 0, src: src };
+    qPaint(b, had);
+    return true;
+  }
   function tcParse(txt, list) {
-    var by = {}; list.forEach(function (b) { by[IDX[b].id] = b; });
+    var by = {}; list.forEach(function (b) { by[cashTc(IDX[b])] = b; });
     var n = 0;
     String(txt).split(';').forEach(function (line) {
       var m = line.match(/v_([A-Za-z0-9_]+)="([^"]*)"/); if (!m || !by[m[1]]) return;
-      var b = by[m[1]], f = m[2].split('~'), c = +f[3], o, t, x = {};
+      var b = by[m[1]], f = m[2].split('~'), c = +f[3];
       if (/^gz/.test(m[1])) {                // 코드~이름~시각~현재가~전일대비~등락률~지역
-        o = c - (+f[4]); t = tcTime(f[2], 'Asia/Shanghai');
+        if (cashSet(b, 'tc', c, c - (+f[4]), tcTime(f[2], 'Asia/Shanghai'), {})) n++;
       } else {                               // 시장~이름~코드~현재가~전일종가~시가~… [30]시각 [33]고가 [34]저가
-        o = +f[4]; t = tcTime(f[30], /^us/.test(m[1]) ? TZ.US : 'Asia/Shanghai');
-        x = { op: +f[5], hi: +f[33], lo: +f[34] };
+        if (cashSet(b, 'tc', c, +f[4], tcTime(f[30], /^us/.test(m[1]) ? TZ.US : 'Asia/Shanghai'), { op: +f[5], hi: +f[33], lo: +f[34] })) n++;
       }
-      if (!(c > 0) || !(o > 0)) return;
-      var had = !!qData[b];
-      qData[b] = { c: c, o: o, t: t, op: x.op > 0 ? x.op : 0, hi: x.hi > 0 ? x.hi : 0, lo: x.lo > 0 ? x.lo : 0 };
-      qPaint(b, had); n++;
     });
     return n;
   }
   function tcLoad(list) {
-    return fetch(TC_API + list.map(function (b) { return IDX[b].id; }).join(','), { cache: 'no-store' })
+    return fetch(TC_API + list.map(function (b) { return cashTc(IDX[b]); }).join(','), { cache: 'no-store' })
       .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.arrayBuffer(); })
       .then(function (buf) {
         var txt;
         try { txt = new TextDecoder('gbk').decode(buf); } catch (e) { txt = new TextDecoder().decode(buf); }
-        return tcParse(txt, list);
+        var n = tcParse(txt, list);
+        if (!n) throw new Error('empty');
+        return n;
       });
   }
-  function tcDelay(list) {                   // 장중·점심·개장 15분 전·마감 10분 뒤까지 10초, 그 밖 60초
+  function emParse(j, list) {                // { data: { diff: [ { f12 코드, f13 시장, f2 현재가, f18 전일 종가, f17 시가, f15 고가, f16 저가, f124 시각(초) } ] } }
+    var by = {}; list.forEach(function (b) { by[IDX[b].em] = b; });
+    var d = j && j.data && j.data.diff, rows = Array.isArray(d) ? d : d && typeof d === 'object' ? Object.keys(d).map(function (k) { return d[k]; }) : [];
+    var n = 0;
+    rows.forEach(function (x) {
+      var b = x && by[x.f13 + '.' + x.f12]; if (!b) return;
+      if (cashSet(b, 'em', +x.f2, +x.f18, +x.f124 * 1000, { op: +x.f17, hi: +x.f15, lo: +x.f16 })) n++;
+    });
+    return n;
+  }
+  function emLoad(list) {
+    return fetch(EM_API + list.map(function (b) { return IDX[b].em; }).join(','), { cache: 'no-store' })
+      .then(dvJson).then(function (j) { var n = emParse(j, list); if (!n) throw new Error('empty'); return n; });
+  }
+  function cashLoad(list) {                  // tc 가 있으면 텐센트(안 되면 동방재부), 없으면 동방재부 — 실패해도 멈추지 않음
+    var tc = list.filter(function (b) { return cashTc(IDX[b]); }), em = list.filter(function (b) { return !cashTc(IDX[b]) && IDX[b].em; });
+    var ps = [];
+    if (tc.length) ps.push(tcLoad(tc).catch(function () {
+      var fb = tc.filter(function (b) { return IDX[b].em; });
+      return fb.length ? emLoad(fb) : 0;
+    }));
+    if (em.length) ps.push(emLoad(em));
+    return Promise.all(ps.map(function (p) { return p.catch(function () { return 0; }); }));
+  }
+  function cashDelay(list) {                 // 장중·점심·개장 15분 전·마감 10분 뒤까지 10초, 그 밖 60초
     var now = Date.now();
     return list.some(function (b) {
       var r = cashState(IDX[b].mkt, now);
       return r.st === 'open' || r.st === 'lunch' || (r.st === 'pre' && r.at - now < 15 * 6e4) || (r.st === 'post' && now - r.cl < 10 * 6e4);
     }) ? 10000 : 60000;
   }
-  function tcRun(list, gen) {
-    tcLoad(list).catch(function () {}).then(function () {
+  function cashRun(list, gen) {
+    cashLoad(list).then(function () {
       if (gen !== tcGen) return;
-      tcT = setTimeout(function () { if (gen === tcGen) tcRun(list, gen); }, tcDelay(list));
+      tcT = setTimeout(function () { if (gen === tcGen) cashRun(list, gen); }, cashDelay(list));
     });
   }
 
@@ -2189,24 +2334,35 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   var dv = { b: null, per: store.get('dvPer', 'd'), daily: null, D: null, S: null, hover: -1, pin: -1, end: -1, slot: 0, ptrY: null,
              busy: null, err: '', refT: null, tick: 0, raf: 0, pushed: false, skipPop: false, L: null, drag: null, touching: false, axisW: 56, back: null };
   if (!DV_PER[dv.per]) dv.per = 'd';
-  var dvCache = {};
+  var dvCache = {}, dvHistSrc = {};          // dvHistSrc: 현물 지수 일별 시세를 받은 곳 (em·tc)
 
   function dvJson(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }
   function dvCopy(x) { return { t: x.t, o: x.o, h: x.h, l: x.l, c: x.c, v: x.v }; }
   function dvFetch(b) {                      // 하루 봉 최대 1000개 { t, o, h, l, c, v }
     var now = Date.now();
-    if (qIsCash(b)) {                        // 현물 지수: 텐센트 일봉 [날짜, 시가, 종가, 고가, 저가, 거래량] (거래일만)
-      var I = IDX[b];
-      if (!I.kl) { var e0 = new Error('nohist'); e0.nohist = true; return Promise.reject(e0); }
-      var url = I.kl === 'fqkline' ? 'https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param=' + I.id + ',day,,,1000,'
-                                   : 'https://web.ifzq.gtimg.cn/appstock/app/kline/kline?param=' + I.id + ',day,,,1000';
-      return fetch(url, { cache: 'no-store' }).then(dvJson).then(function (j) {
-        var dd = j && j.data, s = dd && (dd[I.id] || dd[I.id.replace(/^us/, 'us.')]), rows = (s && (s.day || s.qfqday)) || [];
-        return rows.map(function (x) {
-          var p = String(x[0]).split('-');
-          return { t: Date.UTC(+p[0], +p[1] - 1, +p[2]), o: +x[1], c: +x[2], h: +x[3], l: +x[4], v: +x[5] || 0 };
+    if (qIsCash(b)) {                        // 현물 지수 일봉 (거래일만): 동방재부 먼저, 안 되면 텐센트
+      var I = IDX[b], tcId = cashTc(I);
+      var day = function (s) { var p = String(s).split('-'); return Date.UTC(+p[0], +p[1] - 1, +p[2]); };
+      var tcHist = function () {             // 텐센트 [날짜, 시가, 종가, 고가, 저가, 거래량]
+        var url = I.kl === 'fqkline' ? 'https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param=' + tcId + ',day,,,1000,'
+                                     : 'https://web.ifzq.gtimg.cn/appstock/app/kline/kline?param=' + tcId + ',day,,,1000';
+        return fetch(url, { cache: 'no-store' }).then(dvJson).then(function (j) {
+          var dd = j && j.data, s = dd && (dd[tcId] || dd[tcId.replace(/^us/, 'us.')]), rows = (s && (s.day || s.qfqday)) || [];
+          if (!rows.length) throw new Error('empty');
+          return rows.map(function (x) { return { t: day(x[0]), o: +x[1], c: +x[2], h: +x[3], l: +x[4], v: +x[5] || 0 }; });
         });
-      });
+      };
+      var emHist = function () {             // 동방재부 '날짜,시가,종가,고가,저가,거래량'
+        return fetch(EM_KL + encodeURIComponent(I.em), { cache: 'no-store' }).then(dvJson).then(function (j) {
+          var rows = (j && j.data && j.data.klines) || [];
+          if (!rows.length) throw new Error('empty');
+          return rows.map(function (s) { var x = String(s).split(','); return { t: day(x[0]), o: +x[1], c: +x[2], h: +x[3], l: +x[4], v: +x[5] || 0 }; });
+        });
+      };
+      var tag = function (src) { return function (rows) { dvHistSrc[b] = src; return rows; }; };
+      if (I.em) return emHist().then(tag('em'), function (e) { if (I.kl && tcId) return tcHist().then(tag('tc')); throw e; });
+      if (I.kl && tcId) return tcHist().then(tag('tc'));
+      var e0 = new Error('nohist'); e0.nohist = true; return Promise.reject(e0);
     }
     if (IDX[b] && IDX[b].src === 'hl') {
       return fetch(HL_API, { method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -2295,7 +2451,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   }
   function dvIsLive(t, per) {                // 아직 끝나지 않은 봉인가
     if (per === 'd' && dv.b && qIsCash(dv.b)) {   // 현물 지수: 오늘 장이 열려 있을 때만
-      var r = cashState(IDX[dv.b].mkt, Date.now()), p = r.k.split('-');
+      var r = cashStateB(dv.b, Date.now()), p = r.k.split('-');
       return (r.st === 'open' || r.st === 'lunch') && t === Date.UTC(+p[0], +p[1] - 1, +p[2]);
     }
     var d = new Date(t), end = per === 'm' ? Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1) : t + (per === 'w' ? 7 : 1) * DV_DAY;
@@ -2307,7 +2463,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   function dvSubText(b) {
     if (qIsCash(b)) {
       var now = Date.now(), I = IDX[b];
-      return I.sub + ' · ' + (I.ex || '') + ' 현물 지수 · ' + cashLong(cashState(I.mkt, now), now);
+      return I.sub + ' · ' + (I.ex || '') + ' 현물 지수 · ' + cashLong(cashStateB(b, now), now);
     }
     if (IDX[b]) return IDX[b].sub.split(' · ')[0] + ' 무기한 선물 · ' + (IDX[b].src === 'hl' ? '하이퍼리퀴드' : '게이트');
     var nm = qName(b), s = b + 'USDT 무기한 선물 · 바이낸스';
@@ -2337,14 +2493,15 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   }
   function dvNote() {
     var b = dv.b; if (!b) return;
-    var src = IDX[b] ? ({ hl: '하이퍼리퀴드 trade.xyz ' + IDX[b].id, gate: '게이트 ' + IDX[b].id + ' 마크 가격', tc: '텐센트 증권 공개 시세 (' + IDX[b].id + ')' }[IDX[b].src] || '') : '바이낸스 ' + b + 'USDT';
+    var src = qIsCash(b) ? cashSrcName(b) + (qHasHist(b) ? ' · 일별 시세 ' + ((dvHistSrc[b] || (IDX[b].em ? 'em' : 'tc')) === 'em' ? '동방재부(Eastmoney)' : '텐센트 증권') : '')
+            : IDX[b] ? ({ hl: '하이퍼리퀴드 trade.xyz ' + IDX[b].id, gate: '게이트 ' + IDX[b].id + ' 마크 가격' }[IDX[b].src] || '') : '바이낸스 ' + b + 'USDT';
     var touch = window.matchMedia && matchMedia('(pointer: coarse)').matches;
     var ps = [touch ? '차트를 손가락으로 누른 채 옆으로 움직이면 그날 값이 위에 나옵니다' : '차트에 마우스를 올리면 그날 값 · 끌면 지난 기간 · 휠로 넓게/좁게 · 두 번 클릭하면 처음 화면',
               '하루 봉은 한국시간 오전 9시에 바뀜 · 주봉은 월~일 · 24시간 거래라 주말 봉도 있음',
               '진한 거래량 = 직전 20봉 평균의 2배 이상 · 출처: ' + src];
     if (qIsCash(b)) {
       var I = IDX[b];
-      ps = I.kl ? [ps[0], '하루 봉 = 거래일 (주말·휴장일 없음) · 정규장 ' + cashHours(I.mkt, Date.now()) + ' (한국 시각)', '진한 거래량 = 직전 20봉 평균의 2배 이상 · 출처: ' + src]
+      ps = qHasHist(b) ? [ps[0], '하루 봉 = 거래일 (주말·휴장일 없음) · 정규장 ' + cashHours(I.mkt, Date.now()) + ' (한국 시각)', '진한 거래량 = 직전 20봉 평균의 2배 이상 (거래량이 없는 지수도 있음) · 출처: ' + src]
                 : ['정규장 ' + cashHours(I.mkt, Date.now()) + ' (한국 시각) · 장 시간에만 움직임', '출처: ' + src + ' — 일별 시세는 무료로 받을 곳이 없어 차트는 없음'];
     }
     if (qIsKrw(b)) ps.push(dvKrw() ? '원화 = 달러 가격 × 지금 환율 ' + fx2(fx.k) + '원 (지난 가격도 지금 환율로 환산)' : '환율을 받기 전이라 달러로 표시');
@@ -2609,7 +2766,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     var q = qData[dv.b], d = dv.daily;
     if (!q || !(q.c > 0) || !d || !d.length) return false;
     if (qIsCash(dv.b)) {                     // 현물 지수: 오늘 장이 열린 뒤 받은 값만, 거래소 날짜의 봉에
-      var r = cashState(IDX[dv.b].mkt, Date.now()), lastC = d[d.length - 1];
+      var r = cashStateB(dv.b, Date.now()), lastC = d[d.length - 1];
       if (!r.ses || r.st === 'pre' || (q.t && q.t < r.o)) return false;
       var pk = r.k.split('-'), today = Date.UTC(+pk[0], +pk[1] - 1, +pk[2]), cc = q.c;
       if (lastC.t > today) return false;
@@ -2648,7 +2805,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   function dvLoad() {
     var b = dv.b;
     if (!b || dv.busy === b) return;
-    if (qIsCash(b) && !IDX[b].kl) { dv.err = 'nohist'; if (!dv.daily) dvRender(); return; }   // 일별 자료 없는 지수
+    if (qIsCash(b) && !qHasHist(b)) { dv.err = 'nohist'; if (!dv.daily) dvRender(); return; }   // 일별 자료 없는 지수
     dv.busy = b; $('dvCv').classList.add('busy');
     dvFetch(b).then(function (a) {
       a = dvClean(a);
@@ -2658,7 +2815,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
       dv.daily = a; dv.err = '';
       dvApplyLive(); dvBuild(); dvAxis();
       if (keepEnd >= 0) dv.end = Math.max(0, dv.S.length - 1 - keepEnd);
-      dvHead(); dvRender();
+      dvHead(); if (qIsCash(b)) dvNote(); dvRender();
     }, function () {
       if (dv.b !== b) return;
       dv.err = 'load';
@@ -2864,7 +3021,8 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   }
   window.__hc = { render: render, go: go, goDate: goDate, setToday: null, applyHostState: applyHostState, openSheet: openSheet,
                   qSetEdit: qSetEdit, qAdd: qAdd, qSearch: qSearch, fxSet: fxSet, dvOpen: dvOpen, dvClose: dvClose, dv: dv,
-                  cashState: cashState, cashLabel: cashLabel, tcParse: tcParse, qData: qData };
+                  cashState: cashState, cashStateB: cashStateB, cashLabel: cashLabel, tcParse: tcParse, emParse: emParse, qData: qData,
+                  qList: qList, qWorldToggle: qWorldToggle, sessionOf: sessionOf };
 })();
 </script>
 </body>
