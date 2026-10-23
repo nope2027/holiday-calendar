@@ -2506,8 +2506,14 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
       };
       var tag = function (src) { return function (rows) { dvHistSrc[b + ':' + kind] = src; return rows; }; };
       var tcOk = !intra && I.kl && tcId;
-      if (I.em) return emKline(I, kind).then(tag('em'), function (e) { if (tcOk) return tcHist().then(tag('tc')); throw e; });
-      if (tcOk) return tcHist().then(tag('tc'));
+      var dayFb = function (e) {             // 년봉을 못 받으면 받아 둔 일봉으로 년봉을 만듦 (최근 몇 년만)
+        var cd = kind === 'y' && dvCached(b, 'd');
+        if (!cd) throw e;
+        dvHistSrc[b + ':y'] = (dvHistSrc[b + ':d'] || 'em') + 'd';
+        return cd.d.map(dvCopy);
+      };
+      if (I.em) return emKline(I, kind).then(tag('em'), function (e) { return tcOk ? tcHist().then(tag('tc')).catch(dayFb) : dayFb(e); });
+      if (tcOk) return tcHist().then(tag('tc')).catch(dayFb);
       var e0 = new Error('nohist'); e0.nohist = true; return Promise.reject(e0);
     }
     if (IDX[b] && IDX[b].src === 'hl') {     // 하이퍼리퀴드: 1m·30m·1d (년봉은 하루 봉을 묶음, 최대 5000개)
@@ -2655,13 +2661,13 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   function dvNote() {
     var b = dv.b; if (!b) return;
     var per = dv.per, kind = dvKind(per), intra = dvIntra(per), I = IDX[b], cash = qIsCash(b), cm = cash || qIsMac(b);
-    var hs = dvHistSrc[b + ':' + kind] || (I && I.em ? 'em' : 'tc');
-    var src = cm ? cashSrcName(b) + (dvCan(b, kind) ? ' · 차트 ' + (hs === 'em' ? '동방재부(Eastmoney)' : '텐센트 증권') : '')
+    var hs = dvHistSrc[b + ':' + kind] || (I && I.em ? 'em' : 'tc');   // em·tc, 년봉을 일봉으로 만들었으면 tc·emd·tcd
+    var src = cm ? cashSrcName(b) + (dvCan(b, kind) ? ' · 차트 ' + (/^em/.test(hs) ? '동방재부(Eastmoney)' : '텐센트 증권') : '')
             : I ? ({ hl: '하이퍼리퀴드 trade.xyz ' + I.id, gate: '게이트 ' + I.id + ' 마크 가격' }[I.src] || '') : '바이낸스 ' + b + 'USDT';
     var touch = window.matchMedia && matchMedia('(pointer: coarse)').matches;
     var ps = [touch ? '차트를 손가락으로 누른 채 옆으로 움직이면 그 봉 값이 위에 나옵니다' : '차트에 마우스를 올리면 그 봉 값 · 끌면 지난 기간 · 휠로 넓게/좁게 · 두 번 클릭하면 처음 화면'];
     if (intra) ps.push(DV_PER[per].n + ' · 시각 = 봉 시작 (한국 시각) · ' + (cm ? (per === '1' ? '최근 거래일 하루치' : '최근 약 한 달') + (cash ? ' · 장 시간에만' : '') : '최근 1000개 (' + (per === '1' ? '약 17시간' : '약 3주') + ')'));
-    else if (per === 'y') ps.push('년봉 = 1~12월 한 해 · ' + (cm ? '기록이 있는 처음부터' : '거래를 시작한 뒤부터 (짧으면 1~2개)'));
+    else if (per === 'y') ps.push('년봉 = 1~12월 한 해 · ' + (cm ? (hs === 'em' ? '기록이 있는 처음부터' : '일봉으로 만든 최근 몇 년 (전체 기록은 동방재부 차트 서버가 될 때)') : '거래를 시작한 뒤부터 (짧으면 1~2개)'));
     else if (cm) ps.push('하루 봉 = 거래일 (주말·휴장일 없음)' + (cash ? ' · 정규장 ' + cashHours(I.mkt, Date.now()) + ' (한국 시각)' : ''));
     else ps.push('하루 봉은 한국시간 오전 9시에 바뀜 · 주봉은 월~일 · 24시간 거래라 주말 봉도 있음');
     ps.push('진한 거래량 = 직전 20봉 평균의 2배 이상' + (cm ? ' (거래량이 없는 지수도 있음)' : '') + ' · 출처: ' + src);
@@ -2937,7 +2943,8 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     $('dv').classList.toggle('nohist', !any);
     if (!any) dvMsg('이 지수는 무료로 받을 수 있는 시세 기록이 없어 차트를 그리지 못합니다. 지금 값과 장 상태는 위에 나옵니다.', false, IDX[dv.b] && IDX[dv.b].fut);
     else if (!has && !dvCan(dv.b, kind)) dvMsg('이 지수는 ' + DV_PER[dv.per].n + ' 자료를 무료로 받을 곳이 없습니다. 일·주·월봉을 보세요.');
-    else if (!has) dvMsg(err ? '차트를 불러오지 못했습니다. 인터넷 연결을 확인해 주세요.' : '불러오는 중…', !!err);
+    else if (!has) dvMsg(err ? (qIsCash(dv.b) || qIsMac(dv.b) ? '차트 자료 서버(동방재부)가 잠시 응답하지 않습니다. 1분쯤 뒤 저절로 다시 받습니다.'
+                                                              : '차트를 불러오지 못했습니다. 인터넷 연결을 확인해 주세요.') : '불러오는 중…', !!err);
     else if (!dv.S || !dv.S.length) dvMsg('아직 거래 기록이 없습니다.');
     else dvMsg('');
     dvDraw(); dvReadout();
