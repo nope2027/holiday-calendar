@@ -580,6 +580,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 @container (min-width: 560px) { .qd-tbl .ext { display: table-cell; } }
 .qd-note { flex: none; margin: 6px 0 0; font-size: 11.5px; line-height: 1.5; color: var(--muted); }
 .qd-note p { margin: 0; }
+.qd-note p.warn { color: var(--warn); font-weight: 600; }
 /* 넓은 창: 차트 | 일별 시세 나란히 */
 @media (min-width: 900px) and (min-aspect-ratio: 5/4) {
   .qd-body { flex-direction: row; gap: 18px; }
@@ -2152,11 +2153,22 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   var EM_QH = ['push2', '82.push2', '17.push2'], EM_HH = ['push2his', '7.push2his', '33.push2his', '63.push2his'], emQi = 0, emHi = 0;
   var EM_API = '.eastmoney.com/api/qt/ulist.np/get?fltt=2&fields=f2,f12,f13,f15,f16,f17,f18,f124&secids=';
   var EM_KL = '.eastmoney.com/api/qt/stock/kline/get?fields1=f1,f2,f3&fields2=f51,f52,f53,f54,f55,f56&fqt=0&end=20500101';   // + &klt=(1·30·101·106)&lmt=&secid=
+  //   1분 자료는 시세 서버(push2)의 '오늘 분 자료'(trends2)로 먼저 — 차트 서버(push2his)는 몇 번 부르면 한동안 막힘(2026-10-23 화면확인: 10초 간격에도 3번 중 2번 실패)
+  var EM_TR = '.eastmoney.com/api/qt/stock/trends2/get?fields1=f1,f2,f3,f10&fields2=f51,f52,f53,f54,f55,f56&iscr=0&ndays=1&secid=';   // f10 = trendsTotal
   function emFetch(url) {                    // 8초 안에 답이 없으면 끊고 다음 주소로
     var ac = typeof AbortController === 'function' ? new AbortController() : null, t = ac ? setTimeout(function () { ac.abort(); }, 8000) : 0;
     return fetch(url, ac ? { cache: 'no-store', signal: ac.signal } : { cache: 'no-store' }).then(dvJson)
       .then(function (j) { clearTimeout(t); return j; }, function (e) { clearTimeout(t); throw e; });
   }
+  function emRot(H, cur, path, n, max, waits, ok) {   // 서버 주소를 차례로 (cur = 마지막으로 된 주소부터, 최대 max번, 사이에 waits[n]ms 쉼)
+    var i = (cur + n) % H.length;
+    return emFetch('https://' + H[i] + path).then(function (j) { ok(i); return j; }, function (e) {
+      if (n + 1 >= max) throw e;
+      return new Promise(function (r) { setTimeout(r, waits[n] || 0); }).then(function () { return emRot(H, cur, path, n + 1, max, waits, ok); });
+    });
+  }
+  function emQok(i) { emQi = i; }
+  function emHok(i) { emHi = i; }
   function tcTime(s, tz) {                   // 응답 시각 → ms ('2026-10-20 14:32:10' · '20261020161400' · '2026/10/22 11:59:59'; gz·sh·sz·hk = 베이징·홍콩, us = 뉴욕)
     var m = String(s || '').match(/^(\d{4})[-\/]?(\d\d)[-\/]?(\d\d)[ T]?(\d\d):?(\d\d):?(\d\d)/);
     if (!m) return 0;
@@ -2205,14 +2217,9 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     });
     return n;
   }
-  function emLoad(list) {                    // 안 되면 다음 서버 주소로 (주소마다 한 번씩)
-    var q = list.map(function (b) { return IDX[b].em; }).join(',');
-    var go = function (k) {
-      var i = (emQi + k) % EM_QH.length;
-      return emFetch('https://' + EM_QH[i] + EM_API + q).then(function (j) { emQi = i; return j; },
-        function (e) { if (k + 1 >= EM_QH.length) throw e; return go(k + 1); });
-    };
-    return go(0).then(function (j) { var n = emParse(j, list); if (!n) throw new Error('empty'); return n; });
+  function emLoad(list) {                    // 안 되면 바로 다음 서버 주소로 (주소마다 한 번씩)
+    return emRot(EM_QH, emQi, EM_API + list.map(function (b) { return IDX[b].em; }).join(','), 0, EM_QH.length, [], emQok)
+      .then(function (j) { var n = emParse(j, list); if (!n) throw new Error('empty'); return n; });
   }
   function cashLoad(list) {                  // tc 가 있으면 텐센트(안 되면 동방재부), 없으면 동방재부 — 실패해도 멈추지 않음
     var tc = list.filter(function (b) { return cashTc(IDX[b]); }), em = list.filter(function (b) { return !cashTc(IDX[b]) && IDX[b].em; });
@@ -2404,7 +2411,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   var DV_PER = { '1': { n: '1분봉', cnt: 120, u: '분', ms: 6e4 }, '30': { n: '30분봉', cnt: 96, u: '봉', ms: 18e5 },
                  d: { n: '일봉', cnt: 90, u: '일' }, w: { n: '주봉', cnt: 60, u: '주' }, m: { n: '월봉', cnt: 48, u: '개월' }, y: { n: '년봉', cnt: 30, u: '년' } };
   var DV_FONT = '"Pretendard Variable", Pretendard, "Malgun Gothic", system-ui, sans-serif';
-  var dv = { b: null, per: store.get('dvPer', 'd'), daily: null, ext: {}, errK: {}, D: null, S: null, hover: -1, pin: -1, end: -1, slot: 0, ptrY: null,
+  var dv = { b: null, per: store.get('dvPer', 'd'), daily: null, ext: {}, errK: {}, failAt: {}, D: null, S: null, hover: -1, pin: -1, end: -1, slot: 0, ptrY: null,
              busy: null, refT: null, tick: 0, raf: 0, pushed: false, skipPop: false, L: null, drag: null, touching: false, axisW: 56, back: null };
   if (!DV_PER[dv.per]) dv.per = 'd';
   var dvCache = {}, dvHistSrc = {};          // 키 = 기호:자료(1·30·d·y) / dvHistSrc: 현물 지수 차트 자료를 받은 곳 (em·tc)
@@ -2419,29 +2426,69 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     return !!(I.em || (I.kl && cashTc(I)));
   }
   function dvAnyHist(b) { return ['d', '1', '30', 'y'].some(function (k) { return dvCan(b, k); }); }
+  function dvTtl(b, kind) {                  // 다시 받는 간격 — 현물 지수·VIX·금리(동방재부·텐센트)는 자주 부르면 막혀서 길게, 사이사이는 실시간 값으로 마지막 봉을 고침
+    if (!(qIsCash(b) || qIsMac(b))) return kind === 'y' ? 300000 : 55000;
+    return { '1': 120000, '30': 300000, d: 600000, y: 1800000 }[kind];
+  }
+  function dvStale(b, kind, c) { return !c || Date.now() - c.t > (qIsCash(b) || qIsMac(b) ? dvTtl(b, kind) : 30000); }
+  // 현물 지수·VIX·금리 차트 자료는 이 기기에도 저장 (최근 12개, 'hc.kl.기호:기간') → 다시 열면 바로 보이고, 못 받을 때도 지난 자료를 보여 줌
+  var KL_MAX = 12;
+  function klSave(key, c, src) {
+    try {
+      var s = JSON.stringify({ t: c.t, s: src, d: c.d.map(function (x) { return [x.t, x.o, x.h, x.l, x.c, x.v]; }) });
+      if (s.length > 150000) return;
+      var idx = store.get('klIdx', []).filter(function (k) { return k !== key; });
+      idx.unshift(key);
+      while (idx.length > KL_MAX) localStorage.removeItem('hc.kl.' + idx.pop());
+      localStorage.setItem('hc.kl.' + key, s);
+      store.set('klIdx', idx);
+    } catch (e) {}
+  }
+  function klLoad(key) {
+    try {
+      var o = JSON.parse(localStorage.getItem('hc.kl.' + key) || 'null');
+      if (!o || !(o.t > 0) || !Array.isArray(o.d) || !o.d.length) return null;
+      if (o.s) dvHistSrc[key] = o.s;
+      return { t: o.t, d: o.d.map(function (r) { return { t: r[0], o: r[1], h: r[2], l: r[3], c: r[4], v: r[5] }; }) };
+    } catch (e) { return null; }
+  }
+  function dvCached(b, kind) {               // 이번 실행에서 받은 것 → 없으면 이 기기에 저장된 것
+    var key = b + ':' + kind;
+    if (!dvCache[key] && (qIsCash(b) || qIsMac(b))) { var c = klLoad(key); if (c) dvCache[key] = c; }
+    return dvCache[key];
+  }
 
   function dvJson(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }
   function dvCopy(x) { return { t: x.t, o: x.o, h: x.h, l: x.l, c: x.c, v: x.v }; }
-  function emGet(q, n) {                     // 동방재부 차트 자료: 한꺼번에 많이 부르면 잠깐 막히므로 다음 서버 주소로 바꿔 조금 기다렸다 다시 (주소 4곳 · 최대 4번)
-    n = n || 0;
-    var i = (emHi + n) % EM_HH.length;
-    return emFetch('https://' + EM_HH[i] + EM_KL + q).then(function (j) { emHi = i; return j; }, function (e) {
-      if (n + 1 >= EM_HH.length) throw e;
-      return new Promise(function (ok) { setTimeout(ok, [500, 1200, 2500][n]); }).then(function () { return emGet(q, n + 1); });
-    });
+  function emGet(q) {                        // 동방재부 차트 서버: 자주 부르면 한동안 막히므로 많이 두드리지 않음 (주소를 바꿔 최대 3번, 1.5초·4초 쉼)
+    return emRot(EM_HH, emHi, EM_KL + q, 0, 3, [1500, 4000], emHok);
   }
   var EM_KLT = { '1': 1, '30': 30, d: 101, y: 106 };
-  function emKline(I, kind) {                // '날짜(시각),시가,종가,고가,저가,거래량' — 분봉 시각은 베이징 시각·봉 끝 → 봉 시작 시각으로 바꿈
-    var ms = dvIntra(kind) ? DV_PER[kind].ms : 0;
-    return emGet('&klt=' + EM_KLT[kind] + '&lmt=' + (kind === 'y' ? 200 : 1000) + '&secid=' + encodeURIComponent(I.em)).then(function (j) {
-      var rows = (j && j.data && j.data.klines) || [];
-      if (!rows.length) throw new Error('empty');
-      return rows.map(function (s) {
-        var x = String(s).split(','), dt = x[0].split(' '), p = dt[0].split('-');
-        var t = ms && dt[1] ? instantAt('Asia/Shanghai', dt[0], dt[1].slice(0, 5)) - ms : Date.UTC(+p[0], +p[1] - 1, +p[2]);
-        return { t: t, o: +x[1], c: +x[2], h: +x[3], l: +x[4], v: +x[5] || 0 };
-      });
+  function emRows(rows, ms) {                // '날짜(시각),시가,종가,고가,저가,거래량' — 분봉 시각은 베이징 시각·봉 끝 → 봉 시작 시각으로 바꿈
+    return rows.map(function (s) {
+      var x = String(s).split(','), dt = x[0].split(' '), p = dt[0].split('-');
+      var t = ms && dt[1] ? instantAt('Asia/Shanghai', dt[0], dt[1].slice(0, 5)) - ms : Date.UTC(+p[0], +p[1] - 1, +p[2]);
+      return { t: t, o: +x[1], c: +x[2], h: +x[3], l: +x[4], v: +x[5] || 0 };
     });
+  }
+  function emKline(I, kind) {
+    var ms = dvIntra(kind) ? DV_PER[kind].ms : 0, sid = encodeURIComponent(I.em);
+    var kl = function () {
+      return emGet('&klt=' + EM_KLT[kind] + '&lmt=' + (kind === 'y' ? 200 : 1000) + '&secid=' + sid).then(function (j) {
+        var rows = (j && j.data && j.data.klines) || [];
+        if (!rows.length) throw new Error('empty');
+        return emRows(rows, ms);
+      });
+    };
+    if (kind !== '1') return kl();
+    // 1분: 시세 서버의 최근 거래일 분 자료 (차트 서버 1분봉과 같은 범위) → 안 되면 차트 서버
+    //   개장 동시호가가 있는 시장은 맨 앞에 '개장 값' 한 점이 더 있음 (전체 개수가 홀수: 코스피 391 · VIX 781, 24시간 금리는 1440) → 뺌
+    return emRot(EM_QH, emQi, EM_TR + sid, 0, EM_QH.length, [300, 800], emQok).then(function (j) {
+      var d = (j && j.data) || {}, rows = d.trends || [];
+      if (rows.length > 1 && d.trendsTotal % 2 === 1) rows = rows.slice(1);
+      if (rows.length < 2) throw new Error('empty');
+      return emRows(rows, ms);
+    }).catch(kl);
   }
   function dvFetch(b, kind) {                // 봉 배열 { t, o, h, l, c, v } — kind: '1'·'30'(분봉) · 'd'(일·주·월) · 'y'(년)
     var now = Date.now(), intra = dvIntra(kind), ms = intra ? DV_PER[kind].ms : DV_DAY;
@@ -2620,7 +2667,9 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     ps.push('진한 거래량 = 직전 20봉 평균의 2배 이상' + (cm ? ' (거래량이 없는 지수도 있음)' : '') + ' · 출처: ' + src);
     if (cash && !dvAnyHist(b)) ps = ['정규장 ' + cashHours(I.mkt, Date.now()) + ' (한국 시각) · 장 시간에만 움직임', '출처: ' + src + ' — 시세 기록은 무료로 받을 곳이 없어 차트는 없음'];
     if (qIsKrw(b)) ps.push(dvKrw() ? '원화 = 달러 가격 × 지금 환율 ' + fx2(fx.k) + '원 (지난 가격도 지금 환율로 환산)' : '환율을 받기 전이라 달러로 표시');
-    $('dvNote').innerHTML = ps.map(function (p) { return '<p>' + esc(p) + '</p>'; }).join('');
+    var kc = dvCache[b + ':' + kind], warn = '';
+    if (dv.errK[kind] && kc && dvData(kind)) { var ks = dvKst(kc.t); warn = '새 자료를 받지 못해 ' + ks.m + '/' + ks.d + ' ' + ks.hm + '에 받아 둔 자료를 보여 줍니다 — 1분 뒤 다시 받아 봅니다'; }
+    $('dvNote').innerHTML = (warn ? '<p class="warn">' + esc(warn) + '</p>' : '') + ps.map(function (p) { return '<p>' + esc(p) + '</p>'; }).join('');
   }
   function dvPerPaint() {
     $('dvPer').querySelectorAll('button').forEach(function (x) {
@@ -2962,7 +3011,8 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     dvFetch(b, kind).then(function (a) {
       a = dvClean(a, kind);
       if (!a.length) throw new Error('empty');
-      dvCache[key] = { t: Date.now(), d: a.map(dvCopy) };
+      dvCache[key] = { t: Date.now(), d: a.map(dvCopy) }; delete dv.failAt[key];
+      if (qIsCash(b) || qIsMac(b)) klSave(key, dvCache[key], dvHistSrc[key]);
       if (dv.b !== b) return;
       dvSetData(kind, a); dv.errK[kind] = '';
       if (dvKind(dv.per) !== kind) return;   // 받는 사이 다른 기간으로 바꿈
@@ -2971,9 +3021,11 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
       if (keepEnd >= 0) dv.end = Math.max(0, dv.S.length - 1 - keepEnd);
       dvHead(); dvNote(); dvRender();
     }).catch(function () {
+      dv.failAt[key] = Date.now();           // 실패하면 1분 동안은 저절로 다시 받지 않음 (막힌 서버를 계속 두드리지 않게)
       if (dv.b !== b) return;
       dv.errK[kind] = 'load';
-      if (dvKind(dv.per) === kind && !dvData(kind)) dvRender();
+      if (dvKind(dv.per) !== kind) return;
+      if (!dvData(kind)) dvRender(); else dvNote();   // 지난 자료가 있으면 그대로 두고 안내만
     }).then(function () { if (dv.busy === key) { dv.busy = null; $('dvCv').classList.remove('busy'); } });
   }
   function dvOpen(b) {
@@ -2985,19 +3037,20 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     if (!same) { dv.daily = null; dv.ext = {}; dv.D = null; dv.S = null; }
     hideTip();
     $('dv').hidden = false;
-    var kind = dvKind(dv.per), c = dvCache[b + ':' + kind];
+    var kind = dvKind(dv.per), c = dvCached(b, kind);
     if (c && !dvData(kind)) dvSetData(kind, c.d.map(dvCopy));
     if (dvData(kind)) { dvApplyLive(); dvBuild(); dvAxis(); } else { dv.D = null; dv.S = null; }
     dvPerPaint(); dvLegend(); dvHead(); dvNote(); dvRender();
     $('dvTw').scrollTop = 0;
-    if (!c || Date.now() - c.t > 30000) dvLoad();
+    if (dvStale(b, kind, c)) dvLoad();
     clearInterval(dv.refT);
-    dv.refT = setInterval(function () {      // 1분마다 다시 받음 (년봉은 5분마다)
+    dv.refT = setInterval(function () {      // 다시 받기: 간격은 dvTtl (바이낸스 등 1분 · 년봉 5분 · 현물 지수·VIX·금리 2~30분), 실패한 뒤 1분은 쉼
       if (document.hidden || !dv.b) return;
-      var kc = dvCache[dv.b + ':' + dvKind(dv.per)];
-      if (dv.per === 'y' && kc && Date.now() - kc.t < 300000) return;
+      var k = dvKind(dv.per), key = dv.b + ':' + k, kc = dvCache[key], now = Date.now();
+      if (dv.failAt[key] && now - dv.failAt[key] < 60000) return;
+      if (kc && now - kc.t < dvTtl(dv.b, k)) return;
       dvLoad();
-    }, 60000);
+    }, 30000);
     if (!host && !dv.pushed) { try { history.pushState({ hcDv: 1 }, ''); dv.pushed = true; } catch (e) {} }
     try { $('dvClose').focus({ preventScroll: true }); } catch (e) {}
   }
@@ -3013,7 +3066,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   }
   function dvSetPer(p) {
     if (!DV_PER[p] || p === dv.per) return;
-    var kind = dvKind(p), c = dv.b && dvCache[dv.b + ':' + kind];
+    var kind = dvKind(p), c = dv.b && dvCached(dv.b, kind);
     dv.per = p; store.set('dvPer', p);
     dv.hover = -1; dv.pin = -1; dv.end = -1; dv.slot = 0;
     dvPerPaint(); dvLegend(); dvNote();
@@ -3021,7 +3074,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     if (dvData(kind)) { dvApplyLive(); dvBuild(); dvAxis(); } else { dv.D = null; dv.S = null; }
     dvRender(); dvMarkRow();
     $('dvTw').scrollTop = 0;
-    if (dv.b && (!c || Date.now() - c.t > 30000)) dvLoad();
+    if (dv.b && dvStale(dv.b, kind, c)) dvLoad();
   }
   function dvEnsureVisible(i) {              // 고른 봉이 화면 밖이면 그쪽으로 옮김
     var L = dv.L; if (!L) return;
