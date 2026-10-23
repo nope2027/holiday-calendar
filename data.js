@@ -85,6 +85,10 @@ window.HOLIDAY_DATA = {
       "@SMI":    { n:"스위스 SMI",   sub:"SMI",            ex:"스위스증권거래소 SIX", src:"cash",                em:"100.SSMI",     mkt:"CH", dg:2, alias:"스위스 smi ssmi swiss" },
       "@TSX":    { n:"캐나다 TSX",   sub:"S&P/TSX",        ex:"토론토증권거래소",     src:"cash",                em:"100.TSX",      mkt:"CA", dg:2, alias:"캐나다 tsx gsptse canada 토론토" },
       "@IBOV":   { n:"브라질",       sub:"Ibovespa",       ex:"브라질증권거래소 B3",  src:"cash",                em:"100.BVSP",     mkt:"BR", dg:0, alias:"브라질 보베스파 ibovespa ibov bvsp brazil" },
+      // 증시 지수 위 한 줄 (src "mac"): 동방재부(Eastmoney) 공개 시세 (확인: 2026-10-23) — 15초마다, 누르면 차트. s = 한 줄에 쓰는 짧은 이름
+      //   bp = 금리: 등락을 bp(0.01%p)로 표시
+      "@VIX":   { n:"VIX",          s:"VIX",   sub:"CBOE 변동성 지수",        ex:"미국 CBOE", src:"mac", em:"167.VIX",   dg:2 },
+      "@US10Y": { n:"미국채 10년물", s:"미국채 10년", sub:"미국 국채 10년물 금리 %", ex:"미국 국채", src:"mac", em:"171.US10Y", dg:3, bp:true },
       // 지수 선물 (24시간 무기한 선물 가격): hl = 하이퍼리퀴드 trade.xyz, gate = 게이트
       "@KR200": { n:"코스피200", sub:"KR200 · 선물", src:"hl",   id:"xyz:KR200",  dg:2, alias:"코스피 kospi kospi200 ks200" },
       "@US30":  { n:"다우",      sub:"US30 · 선물",  src:"gate", id:"US30_USDT",  dg:0, alias:"다우존스 dow dji ym us30" },
@@ -92,6 +96,8 @@ window.HOLIDAY_DATA = {
       "@SPX":   { n:"S&P500",    sub:"SP500 · 선물", src:"hl",   id:"xyz:SP500",  dg:2, alias:"에스앤피 sp500 spx es us500" },
       "@N225":  { n:"니케이225", sub:"JP225 · 선물", src:"hl",   id:"xyz:JP225",  dg:0, alias:"니케이 닛케이 nikkei n225 jp225" }
     },
+    // 시세 목록 맨 위(증시 지수 위) 한 줄 — 순서대로
+    macro: ["@VIX","@US10Y"],
     // 시세 편집 화면의 '세계 증시' — 눌러서 지금 탭에 넣기·빼기 (순서대로 보임)
     world: [
       { g:"한국",        items:["@KOSPI","@KOSDAQ","@KS200"] },
