@@ -1,6 +1,6 @@
 /* 휴장 캘린더 — 오프라인에서도 달력이 열리도록 화면 파일만 저장.
    시세·환율(바이낸스·Coinbase 등 다른 주소)은 건드리지 않음. */
-var CACHE = 'hc-2026-10-23a';
+var CACHE = 'hc-2026-10-23b';
 var SHELL = ['./', './index.html', './data.js', './manifest.webmanifest', './fonts/PretendardVariable.woff2',
              './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png', './icons/favicon-32.png'];
 
