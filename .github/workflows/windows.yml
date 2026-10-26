@@ -26,18 +26,26 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-24.04
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0             # 프로그램 소스가 언제 바뀌었는지 보려고 (아래 '지난 프로그램 쓰기')
 
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
+      # 2026-10-26: apt-get update 가 10분 넘게 멈춘 날이 있음 → 기다리는 시간을 정하고, 안 되면 아래 '지난 프로그램 쓰기'로
       - name: 도구 (C# 컴파일러 mono, Pillow)
+        id: tools
+        continue-on-error: true
+        timeout-minutes: 6
         run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq mono-mcs mono-devel > /dev/null
           python -m pip install --quiet pillow
+          A="-o Acquire::Retries=2 -o Acquire::http::Timeout=25 -o Acquire::https::Timeout=25"
+          sudo apt-get $A update -qq || echo "::warning::apt-get update 실패 — 받아 둔 목록으로 설치해 봄"
+          sudo apt-get $A install -y -qq mono-mcs mono-devel > /dev/null
 
       - name: WebView2 SDK 1.0.3856.49 (pywebview 6.2.1 에 들어 있는 것과 같은 파일)
         run: |
@@ -46,6 +54,7 @@ jobs:
           unzip -q dl/pywebview-6.2.1-py3-none-any.whl 'webview/lib/*' -d wv
 
       - name: 프로그램 만들기
+        if: steps.tools.outcome == 'success'
         run: |
           L=wv/webview/lib
           python windows/make_ico.py icons/icon-512.png app.ico
@@ -54,6 +63,23 @@ jobs:
             -r:System.dll -r:System.Drawing.dll -r:System.Windows.Forms.dll \
             -r:$L/Microsoft.Web.WebView2.Core.dll -r:$L/Microsoft.Web.WebView2.WinForms.dll \
             windows/HolidayCalendar.cs
+
+      - name: 지난 프로그램 쓰기 (mono 를 못 받은 날 — 프로그램 소스가 지난 zip 뒤로 안 바뀌었을 때만)
+        if: steps.tools.outcome != 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          R="$GITHUB_REPOSITORY"
+          SRC=$(git log -1 --format=%ct -- windows/HolidayCalendar.cs windows/make_ico.py icons/icon-512.png)
+          REL=$(gh release view windows -R "$R" --json assets --jq '.assets[] | select(.name=="holiday-calendar-windows.zip") | .updatedAt')
+          [ -n "$REL" ] || { echo "::error::지난 zip 이 없음 — 나중에 다시 실행"; exit 1; }
+          RELT=$(date -d "$REL" +%s)
+          echo "프로그램 소스 마지막 변경 $(date -u -d @$SRC) · 지난 zip $REL"
+          [ "$SRC" -lt "$RELT" ] || { echo "::error::프로그램 소스가 지난 zip 뒤에 바뀜 — mono 가 필요, 나중에 다시 실행"; exit 1; }
+          gh release download windows -p holiday-calendar-windows.zip -D prev -R "$R"
+          unzip -q prev/holiday-calendar-windows.zip HolidayCalendar.exe -d prev
+          cp prev/HolidayCalendar.exe HolidayCalendar.exe
+          echo "::notice::지난 zip 의 HolidayCalendar.exe 를 그대로 씀 (화면 파일만 새것)"
 
       - name: zip 묶기 (zip 안 이름은 영문만 — 어떤 Windows에서도 탐색기로 풀리게)
         run: |
