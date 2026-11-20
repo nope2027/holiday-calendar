@@ -235,10 +235,50 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 
 /* ── 목록 ── */
 .listwrap { display: flex; flex-direction: column; min-height: 0; }
-.listhead { display: flex; align-items: baseline; justify-content: space-between; padding: 4px 2px 6px; border-top: 1px solid var(--line); padding-top: 10px; }
-.main.wide .listhead { border-top: 0; padding-top: 4px; }
-.listhead h2 { margin: 0; font-size: 14.5px; font-weight: 700; }
-.listhead span { font-size: 12px; color: var(--muted); }
+/* 탭: [뉴스] [휴장 · 휴일] */
+.listhead { display: flex; align-items: flex-end; gap: 2px; padding-top: 8px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); margin-bottom: 6px; flex: none; }
+.main.wide .listhead { border-top: 0; padding-top: 0; }
+.ltab { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 10px; margin-bottom: -1px; border-bottom: 2px solid transparent; color: var(--muted); white-space: nowrap; }
+.ltab b { font-size: 14.5px; font-weight: 700; }
+.ltab > span { font-size: 12px; font-weight: 600; color: var(--muted); }
+.ltab:hover { color: var(--text); }
+.ltab.on { color: var(--text); border-bottom-color: var(--accent); }
+.ltab .ln-badge { min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--bad); color: #fff; font-size: 11px; font-weight: 700; line-height: 18px; text-align: center; }
+.ltab .ln-badge[hidden] { display: none; }
+
+/* 뉴스: 거르기 칩 · 최신순 목록 (제목만, 누르면 원문) */
+.news { display: flex; flex-direction: column; min-height: 0; flex: 1; }
+.news[hidden] { display: none; }
+.n-bar { display: flex; align-items: center; gap: 8px; margin: 0 0 4px; flex: none; }
+.n-chips { display: flex; gap: 4px; flex: none; }
+.n-chips button { height: 28px; padding: 0 11px; border-radius: 14px; border: 1px solid var(--line); font-size: 12.5px; font-weight: 600; color: var(--text2); white-space: nowrap; }
+.n-chips button:hover { background: var(--bg2); }
+.n-chips button.on { background: var(--text); border-color: var(--text); color: var(--bg); font-weight: 700; }
+.n-chips button[data-f="brk"].on { background: var(--bad); border-color: var(--bad); color: #fff; }
+.n-st { margin-left: auto; min-width: 0; font-size: 11.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+.n-st.err { color: var(--warn); }
+.n-list { flex: 1; min-height: 0; overflow-y: auto; margin: 0 -6px; padding: 0 6px; scrollbar-width: thin; scrollbar-color: var(--bg3) transparent; }
+.n-day { position: sticky; top: 0; z-index: 1; background: var(--bg); padding: 7px 2px 3px; font-size: 12px; font-weight: 700; color: var(--muted); }
+.n-row { display: grid; grid-template-columns: 40px minmax(0, 1fr); column-gap: 8px; padding: 6px 6px 7px; border-radius: 9px; color: inherit; text-decoration: none; }
+.n-row:hover { background: var(--bg2); }
+.n-row:focus-visible { outline-offset: -2px; }
+.n-t { font-size: 13px; font-weight: 700; color: var(--text2); line-height: 20px; font-variant-numeric: tabular-nums; }
+.n-row.brk .n-t { color: var(--bad); }
+.n-h { display: block; min-width: 0; font-size: 14px; font-weight: 600; line-height: 20px; color: var(--text); word-break: keep-all; overflow-wrap: anywhere; }
+.n-h:lang(en) { font-size: 13.5px; font-weight: 500; }
+.n-k, .n-g { display: inline-block; font-style: normal; height: 18px; line-height: 18px; padding: 0 5px; margin-right: 5px; border-radius: 4px; font-size: 11px; font-weight: 700; vertical-align: 1px; }
+.n-k { background: var(--bad); color: #fff; }
+.n-g { box-shadow: inset 0 0 0 1px var(--line); color: var(--text2); }
+.n-kw { font-weight: 800; background: color-mix(in srgb, var(--warn) 24%, transparent); border-radius: 3px; padding: 0 1px; }
+.n-m { display: inline-block; margin-left: 7px; font-size: 11.5px; font-weight: 500; line-height: 20px; color: var(--muted); white-space: nowrap; vertical-align: top; }
+.n-s { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 5px; vertical-align: 1px; background: var(--muted); }
+.n-s.s-nw { background: #2f6fdd; } .n-s.s-fj { background: #f08c00; } .n-s.s-wsj { background: var(--text2); } .n-s.s-nyt { background: #8a8f98; }
+.n-row.new { animation: n-new 9s ease-out; }
+@keyframes n-new { 0%, 45% { background: color-mix(in srgb, var(--accent) 15%, transparent); } 100% { background: transparent; } }
+@media (prefers-reduced-motion: reduce) { .n-row.new { animation: none; background: color-mix(in srgb, var(--accent) 10%, transparent); } }
+.n-empty { padding: 18px 6px; color: var(--muted); font-size: 13px; }
+.n-foot { flex: none; padding: 6px 2px 0; border-top: 1px solid var(--line); margin-top: 6px; font-size: 11.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.listwrap.l-news .list, .listwrap.l-news .legend { display: none; }
 .list { overflow-y: auto; min-height: 0; flex: 1; margin: 0 -6px; padding: 0 6px; scrollbar-width: thin; scrollbar-color: var(--bg3) transparent; }
 .list::-webkit-scrollbar { width: 8px; }
 .list::-webkit-scrollbar-thumb { background: var(--bg3); border-radius: 8px; }
@@ -484,7 +524,15 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .app.m .quotes { width: 100%; border-right: 0;   /* 가로로 넓으면 가운데 560px 안에 */
   padding-left: max(16px, env(safe-area-inset-left, 0px), calc((100vw - 560px) / 2));
   padding-right: max(16px, env(safe-area-inset-right, 0px), calc((100vw - 560px) / 2)); }
-.app.m.v-cal .quotes, .app.m.v-q .main { display: none; }
+.app.m.v-cal .quotes, .app.m.v-q .main, .app.m.v-n .quotes { display: none; }
+/* 휴대폰 '뉴스' 화면: 위 막대 + 뉴스만 (달력 화면의 목록은 휴장·휴일) */
+.app.m.v-n .main { grid-template-rows: auto minmax(0, 1fr); grid-template-areas: "top" "list"; }
+.app.m.v-n .main > .clocks, .app.m.v-n .main > .status, .app.m.v-n .main > .cal, .app.m.v-n .listhead, .app.m.v-n .top .title { display: none !important; }
+.app.m.v-n .top::before { content: "뉴스"; font-size: 20px; font-weight: 700; letter-spacing: -0.02em; }
+.app.m.v-cal .ltab[data-l="news"] { display: none; }
+.mnav button { position: relative; }
+.mn-badge { position: absolute; top: 5px; left: calc(50% + 7px); min-width: 17px; height: 17px; padding: 0 4px; border-radius: 9px; background: var(--bad); color: #fff; font-size: 10.5px; font-weight: 700; font-style: normal; line-height: 17px; text-align: center; }
+.mn-badge[hidden] { display: none; }
 .app.m .mnav { display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 25; height: var(--navh);
   padding: 0 env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
   background: var(--bg); border-top: 1px solid var(--line); }
@@ -492,6 +540,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .mnav button { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 12px; font-weight: 600; color: var(--muted); }
 .mnav button svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .mnav button.on { color: var(--accent); }
+.mnav button[hidden] { display: none; }
 .mnav button.on span { font-weight: 700; }
 /* 손가락으로 누르기 쉽게 */
 @media (pointer: coarse) {
@@ -508,6 +557,9 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   .q-chip { height: 34px; padding: 0 12px; border-radius: 17px; font-size: 13px; }
   .q-chip.on { padding-left: 9px; }
   .q-wc { gap: 6px; }
+  .ltab { height: 42px; }
+  .n-chips button { height: 34px; padding: 0 14px; border-radius: 17px; font-size: 13.5px; }
+  .n-row { padding-top: 10px; padding-bottom: 10px; }
   .seg button { height: 36px; }
 }
 
@@ -683,10 +735,23 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     <div class="grid" id="grid"></div>
   </section>
 
-  <section class="listwrap">
-    <div class="listhead"><h2 id="listTitle">휴장 · 휴일</h2><span id="listCount"></span></div>
+  <section class="listwrap" id="listwrap">
+    <div class="listhead" role="tablist" aria-label="뉴스 · 휴장 목록">
+      <button class="ltab" role="tab" data-l="news" id="ltNews"><b>뉴스</b><span class="ln-badge" id="nBadge" hidden></span></button>
+      <button class="ltab" role="tab" data-l="hol" id="ltHol"><b id="listTitle">휴장 · 휴일</b><span id="listCount"></span></button>
+    </div>
+    <div class="news" id="news" hidden>
+      <div class="n-bar">
+        <div class="n-chips" id="nChips" role="group" aria-label="뉴스 거르기">
+          <button data-f="all">전체</button><button data-f="brk">속보</button><button data-f="kr">국내</button><button data-f="world">해외</button>
+        </div>
+        <span class="n-st" id="nSt"></span>
+      </div>
+      <div class="n-list" id="nList" aria-live="polite"></div>
+      <div class="n-foot" id="nFoot">제목만 · 누르면 원문 · 뉴시스 · FJ = FinancialJuice · WSJ · NYT</div>
+    </div>
     <div class="list" id="list"></div>
-    <div class="legend">
+    <div class="legend" id="legend">
       <span><i class="chip closed">휴</i>휴장</span>
       <span><i class="chip part">조</i>조기폐장·시간변경</span>
       <span><i class="chip open">개</i>공휴일·정상개장</span>
@@ -700,6 +765,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   <nav class="mnav" id="mnav" aria-label="화면 전환">
     <button data-v="cal"><svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg><span>달력</span></button>
     <button data-v="q"><svg viewBox="0 0 24 24"><path d="M4 19.5h16"/><path d="M5 15.5l4.5-5 3.5 3 6-7"/><path d="M15 6.5h4v4"/></svg><span>시세</span></button>
+    <button data-v="n"><svg viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M7.5 9h9M7.5 12.5h9M7.5 16h5.5"/></svg><span>뉴스</span><i class="mn-badge" id="nBadgeM" hidden></i></button>
   </nav>
 
   <div class="tip" id="tip" hidden></div>
@@ -756,6 +822,11 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
         <label class="switch">시세 보이기 <input type="checkbox" id="optQuotes"></label>
         <div class="seg" style="margin-top:4px"><button id="optQEdit">종목 추가 · 편집</button></div>
         <p class="hint">탭(전체·한국·미국·일본)마다 종목·ETF를 따로 넣을 수 있습니다. 증시 지수(코스피·나스닥·니케이·항셍·DAX 등 세계 증시 34개 — 편집 화면 '세계 증시'에서 눌러서 넣기·빼기)는 거래소 장 시간에만 움직이고 줄마다 장 상태(장중·점심·마감·휴장)를 보여 줍니다(텐센트 증권·동방재부 공개 시세). 지수 선물·종목은 24시간 무기한 선물(실제 거래소 시세와 다르고 주말에도 움직임), 환율(원/달러·원/엔·원/위안·달러/엔)은 Coinbase 공개 환율(1분마다)입니다.</p>
+      </section>
+      <section>
+        <h4>뉴스 (달력 아래 · 오른쪽 '뉴스' 탭)</h4>
+        <label class="switch">뉴스 받기 <input type="checkbox" id="optNews"></label>
+        <p class="hint">국내 뉴시스(속보·경제·금융·국제)와 해외 FinancialJuice 실시간 헤드라인·WSJ·NYT(영어 원문)의 제목을 모아 최신순으로 보여 줍니다. 누르면 원문 기사가 열립니다. 뉴스 탭을 보는 동안 1~2분마다(해외 기사는 5분마다) 받고, 다른 화면이면 5분에 한 번 새 속보 수만 셉니다. 로이터는 무료로 받을 곳이 없어 넣지 않았습니다.</p>
       </section>
       <section>
         <h4>실시간 시계 (한국 · 미국 뉴욕)</h4>
@@ -1416,6 +1487,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     $('optPin').checked = !!hostState.pin;
     $('optClock').checked = !!clockOn;
     $('optQuotes').checked = !!qOn;
+    $('optNews').checked = !!news.on;
     $('optAuto').checked = !!hostState.autostart;
     $('notes').innerHTML = ['데이터 기준일 ' + D.updated + ' · 범위 ' + D.from.replace('-', '.') + ' ~ ' + D.to.replace('-', '.')].concat(D.notes)
       .map(function (n) { return '<li>' + esc(n) + '</li>'; }).join('');
@@ -3235,6 +3307,165 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     if (qOn) qLoadCat().then(function (c) { if (c !== before && !qEdit) qRender(); });
   }, 5000);
 
+  /* ── 뉴스: 국내 뉴시스 + 해외 FinancialJuice·WSJ·NYT ──
+     다른 사이트에서 불러도 되는 RSS 만 (2026-11-20 확인: 연합·한경·매경·로이터·CNBC 등은 브라우저에서 못 부름, JTBC RSS 는 2024-10 뒤로 멈춤)
+     제목·시각·링크만 씀(글자로만 읽고 실행 안 함, 링크는 아래 주소만). 뉴스 탭을 보는 동안만 자주 받고, 아니면 5분에 한 번 속보만 */
+  var NEWS_SRC = [
+    { id: 'nws', src: 'nw', sec: '', url: 'https://www.newsis.com/RSS/sokbo.xml', every: 90, bg: true, onlyBrk: true },   // 뉴시스 최신 전체 → [속보]만
+    { id: 'nwe', src: 'nw', sec: '경제', url: 'https://www.newsis.com/RSS/economy.xml', every: 240 },
+    { id: 'nwb', src: 'nw', sec: '금융', url: 'https://www.newsis.com/RSS/bank.xml', every: 240 },
+    { id: 'nwi', src: 'nw', sec: '국제', url: 'https://www.newsis.com/RSS/international.xml', every: 240 },
+    { id: 'fj', src: 'fj', sec: '', url: 'https://www.financialjuice.com/feed.ashx?xy=rss', every: 90, bg: true, brk: true },   // 실시간 헤드라인 (자주 부르면 잠깐 막힘)
+    { id: 'wm', src: 'wsj', sec: 'Markets', url: 'https://feeds.content.dowjones.io/public/rss/RSSMarketsMain', every: 300 },
+    { id: 'we', src: 'wsj', sec: 'Economy', url: 'https://feeds.content.dowjones.io/public/rss/socialeconomyfeed', every: 300 },
+    { id: 'ww', src: 'wsj', sec: 'World', url: 'https://feeds.content.dowjones.io/public/rss/RSSWorldNews', every: 300 },
+    { id: 'ny', src: 'nyt', sec: 'Business', url: 'https://rss.nytimes.com/services/xml/rss/nyt/Business.xml', every: 480 }
+  ];
+  var NEWS_NAME = { nw: '뉴시스', fj: 'FinancialJuice', wsj: 'WSJ', nyt: 'NYT' }, NEWS_SHORT = { nw: '뉴시스', fj: 'FJ', wsj: 'WSJ', nyt: 'NYT' };
+  var NEWS_HOSTS = ['newsis.com', 'financialjuice.com', 'wsj.com', 'nytimes.com'];
+  // 눈에 띄게 할 낱말 (시장을 움직이는 것 위주)
+  var NEWS_KW = /연준|파월|FOMC|기준금리|금리 ?(?:인상|인하|동결)|소비자물가|CPI|PCE|고용지표|비농업|실업률|환율|사이드카|서킷브레이커|급락|급등|폭락|폭등|관세|한국은행|\b(?:Fed|Powell|ECB|BOJ|BoJ|PBOC|OPEC|payrolls|recession|tariffs?|inflation)\b|\brate (?:hike|cut)s?\b|\bTreasury yields?\b|\bjobless claims\b/gi;
+  var news = { items: [], byId: {}, last: {}, err: {}, busy: {}, ok: {}, timer: 0, minT: 0,
+               on: store.get('newsOn', true), tab: store.get('ltab', 'news'), filt: store.get('newsF', 'all'), seen: store.get('newsSeen', 0) };
+  if (['all', 'brk', 'kr', 'world'].indexOf(news.filt) < 0) news.filt = 'all';
+  function nSafe(link) {                    // 링크는 위 뉴스 사이트의 https·http 주소만
+    try {
+      var u = new URL(link), h = u.hostname.toLowerCase();
+      if (u.protocol !== 'https:' && u.protocol !== 'http:') return '';
+      return NEWS_HOSTS.some(function (d) { return h === d || h.slice(-d.length - 1) === '.' + d; }) ? u.href : '';
+    } catch (e) { return ''; }
+  }
+  function nParse(txt, f) {
+    var doc = new DOMParser().parseFromString(txt, 'text/xml');
+    if (doc.getElementsByTagName('parsererror').length) throw new Error('xml');
+    var its = doc.getElementsByTagName('item'), out = [];
+    for (var i = 0; i < its.length && i < 120; i++) {
+      var it = its[i], g = function (n) { var e = it.getElementsByTagName(n)[0]; return e ? e.textContent.trim() : ''; };
+      var title = g('title').replace(/^FinancialJuice:\s*/i, '').replace(/\s+/g, ' '), link = nSafe(g('link')), t = Date.parse(g('pubDate'));
+      if (!title || !link || !(t > 0)) continue;
+      var brk = !!f.brk, tag = '', m = title.match(/^\[(속보|1보|2보|종합\d?보?|단독|긴급)\]\s*/);
+      if (m) { title = title.slice(m[0].length); if (/^(속보|1보|긴급)$/.test(m[1])) brk = true; else tag = m[1]; }
+      if (f.onlyBrk && !brk) continue;
+      out.push({ id: link.replace(/[?#].*$/, '').toLowerCase(), t: Math.min(t, Date.now() + 60000), title: title, link: link, src: f.src, sec: f.sec, brk: brk, tag: tag, en: f.src !== 'nw' });
+    }
+    return out;
+  }
+  function nFetch(f) {
+    var ac = typeof AbortController === 'function' ? new AbortController() : null, tm = ac ? setTimeout(function () { ac.abort(); }, 15000) : 0;
+    return fetch(f.url, ac ? { cache: 'no-store', signal: ac.signal } : { cache: 'no-store' })
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
+      .then(function (txt) { clearTimeout(tm); return nParse(txt, f); }, function (e) { clearTimeout(tm); throw e; });
+  }
+  function nMerge(list) {                   // 같은 기사(링크)는 하나로 — 뉴시스는 속보·경제·금융에 겹쳐 나옴
+    var add = 0;
+    list.forEach(function (x) {
+      var o = news.byId[x.id];
+      if (o) { if (x.brk) o.brk = true; if (x.sec && o.secs.indexOf(x.sec) < 0) o.secs.push(x.sec); return; }
+      x.secs = x.sec ? [x.sec] : []; news.byId[x.id] = x; news.items.push(x); add++;
+    });
+    if (add) {
+      news.items.sort(function (a, b) { return b.t - a.t; });
+      if (news.items.length > 400) { news.items.slice(400).forEach(function (x) { delete news.byId[x.id]; }); news.items.length = 400; }
+    }
+    return add;
+  }
+  function nShown() { var n = $('news'); return !!n && !n.hidden && n.offsetParent !== null; }
+  function nTick() {                        // 15초마다: 받을 때가 된 곳만 (실패하면 간격을 두 배씩, 최대 8배)
+    clearTimeout(news.timer); news.timer = 0;
+    if (!news.on || document.hidden || compact) return;
+    var vis = nShown(), now = Date.now();
+    NEWS_SRC.forEach(function (f) {
+      if (!vis && !f.bg) return;
+      var every = (vis ? f.every : Math.max(300, f.every)) * 1000 * Math.pow(2, Math.min(news.err[f.id] || 0, 3));
+      if (news.busy[f.id] || (news.last[f.id] && now - news.last[f.id] < every)) return;
+      news.busy[f.id] = 1;
+      nFetch(f).then(function (list) { news.err[f.id] = 0; news.ok[f.id] = Date.now(); if (nMerge(list)) nChanged(); },
+                     function () { news.err[f.id] = (news.err[f.id] || 0) + 1; })
+        .then(function () { news.busy[f.id] = 0; news.last[f.id] = Date.now(); nStatus(); });
+    });
+    news.timer = setTimeout(nTick, 15000);
+  }
+  function nPass(x) { var f = news.filt; return f === 'all' || (f === 'brk' ? x.brk : f === 'kr' ? x.src === 'nw' : x.src !== 'nw'); }
+  function nAgo(t, now) {
+    var m = Math.floor((now - t) / 60000);
+    return m < 1 ? '방금' : m < 60 ? m + '분 전' : m < 24 * 60 ? Math.floor(m / 60) + '시간 전' : Math.floor(m / 1440) + '일 전';
+  }
+  function nHl(s) { return s.replace(NEWS_KW, function (w) { return '<b class="n-kw">' + w + '</b>'; }); }
+  function nRender() {                      // 보이는 동안: 날짜별로 묶어 최신순 (처음 보이는 새 기사는 잠깐 파랗게)
+    var box = $('nList'); if (!box) return;
+    $('nChips').querySelectorAll('button').forEach(function (b) { var on = b.getAttribute('data-f') === news.filt; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
+    if (!news.on) { box.innerHTML = '<div class="n-empty">뉴스 받기가 꺼져 있습니다. 설정 › 뉴스 › 뉴스 받기를 켜세요.</div>'; return; }
+    var now = Date.now(), seen0 = news.seen, top = 0, lastDay = '', h = '';
+    var arr = news.items.filter(nPass).slice(0, 200);
+    arr.forEach(function (x) {
+      var p = partsIn(TZ.KR, x.t), dk = p.key;
+      if (dk !== lastDay) {
+        lastDay = dk;
+        var tk = partsIn(TZ.KR, now).key, yk = partsIn(TZ.KR, now - 864e5).key;
+        h += '<div class="n-day">' + (dk === tk ? '오늘' : dk === yk ? '어제' : '') + ' ' + p.m + '/' + p.d + '(' + WD[fromKey(dk).getDay()] + ')</div>';
+      }
+      var isNew = !x.shown && x.t > seen0 && seen0 > 0; x.shown = true; if (x.t > top) top = x.t;
+      var sec = x.secs.length ? ' ' + x.secs.join('·') : '', ago = nAgo(x.t, now);   // 출처·몇 분 전은 제목 끝에 이어서 (줄 아낌)
+      h += '<a class="n-row' + (x.brk ? ' brk' : '') + (isNew ? ' new' : '') + '" href="' + esc(x.link) + '" target="_blank" rel="noopener noreferrer" title="' +
+        esc(NEWS_NAME[x.src] + sec + ' · ' + p.m + '/' + p.d + ' ' + pad(p.h) + ':' + pad(p.mi) + ' (' + ago + ') · 누르면 원문') + '">' +
+        '<span class="n-t">' + pad(p.h) + ':' + pad(p.mi) + '</span>' +
+        '<span class="n-h"' + (x.en ? ' lang="en"' : '') + '>' + (x.brk ? '<i class="n-k">속보</i>' : x.tag ? '<i class="n-g">' + esc(x.tag) + '</i>' : '') + nHl(esc(x.title)) +
+        '<span class="n-m" lang="ko"><i class="n-s s-' + x.src + '"></i>' + NEWS_SHORT[x.src] + esc(sec) + ' · ' + ago + '</span></span></a>';
+    });
+    if (!arr.length) h = '<div class="n-empty">' + (Object.keys(news.ok).length ? '이 거르기에 맞는 기사가 아직 없습니다.' : '뉴스를 불러오는 중…') + '</div>';
+    var y = box.scrollTop;
+    box.innerHTML = h; box.scrollTop = y;
+    if (top > news.seen) { news.seen = top; store.set('newsSeen', top); }
+    nBadge();
+  }
+  function nStatus() {
+    var el = $('nSt'); if (!el) return;
+    var bad = NEWS_SRC.filter(function (f) { return (news.err[f.id] >= 2 || (news.err[f.id] && !news.ok[f.id])) && (nShown() || f.bg); }).map(function (f) { return NEWS_NAME[f.src]; });
+    bad = bad.filter(function (v, i) { return bad.indexOf(v) === i; });
+    var lastOk = Math.max.apply(null, [0].concat(Object.keys(news.ok).map(function (k) { return news.ok[k]; })));
+    var p = lastOk ? partsIn(TZ.KR, lastOk) : null;
+    el.classList.toggle('err', !!bad.length);
+    el.textContent = !news.on ? '꺼짐' : bad.length ? bad.join('·') + ' 못 받음 · 다시 시도 중' : p ? pad(p.h) + ':' + pad(p.mi) + ' 받음' : '불러오는 중';
+    el.title = '국내: 뉴시스 속보·경제·금융·국제 (1분 30초~4분마다)\n해외: FinancialJuice 실시간(1분 30초마다) · WSJ · NYT (5~8분마다)\n뉴스 탭이 안 보이면 5분에 한 번 속보만';
+  }
+  function nBadge() {                       // 안 본 새 기사 수 (뉴스 탭이 안 보일 때만)
+    var n = nShown() ? 0 : news.items.filter(function (x) { return x.t > news.seen && nPass(x); }).length;
+    var txt = n > 99 ? '99+' : String(n);
+    [$('nBadge'), $('nBadgeM')].forEach(function (b) { if (!b) return; b.hidden = !n; b.textContent = n ? txt : ''; });
+  }
+  function nChanged() {
+    if (!news.seen && news.items.length) { news.seen = news.items[0].t; store.set('newsSeen', news.seen); }   // 처음 켠 날: 이미 있던 기사는 '새 기사'로 안 셈
+    if (nShown()) nRender(); else nBadge();
+  }
+  function nApplyTab() {                    // 목록 자리: 뉴스 ↔ 휴장·휴일 (휴대폰은 아래 '뉴스' 화면 / 달력 화면은 휴장·휴일)
+    var mobile = $('app').classList.contains('m'), t = mobile ? (mview === 'n' ? 'news' : 'hol') : news.tab;
+    $('listwrap').classList.toggle('l-news', t === 'news');
+    $('news').hidden = t !== 'news';
+    $('ltNews').classList.toggle('on', t === 'news'); $('ltNews').setAttribute('aria-selected', t === 'news');
+    $('ltHol').classList.toggle('on', t !== 'news'); $('ltHol').setAttribute('aria-selected', t !== 'news');
+    if (t === 'news') { nRender(); nStatus(); } else nBadge();
+    if (!news.timer || t === 'news') nTick();
+  }
+  $('listwrap').querySelector('.listhead').addEventListener('click', function (e) {
+    var b = e.target.closest('.ltab'); if (!b) return;
+    news.tab = b.getAttribute('data-l'); store.set('ltab', news.tab); nApplyTab();
+  });
+  $('nChips').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-f]'); if (!b) return;
+    news.filt = b.getAttribute('data-f'); store.set('newsF', news.filt); $('nList').scrollTop = 0; nRender();
+  });
+  $('nList').addEventListener('click', function (e) {     // 위젯: 기본 브라우저로 (위젯 안에서는 다른 사이트로 못 감)
+    var a = e.target.closest('a.n-row'); if (!a || !host) return;
+    e.preventDefault(); var u = nSafe(a.getAttribute('href')); if (u) send({ type: 'open', url: u });
+  });
+  setInterval(function () { if (nShown()) nRender(); }, 60000);   // '몇 분 전' 고침
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) nTick(); });
+  $('optNews').onchange = function () {
+    news.on = this.checked; store.set('newsOn', news.on);
+    if (!news.on) { clearTimeout(news.timer); news.timer = 0; }
+    updateWide(); nApplyTab();
+  };
+
   /* ── 본문 너비에 따라 세로형/가로형 ── */
   var mview = store.get('mview', 'cal');     // 휴대폰 화면: 'cal' 달력 / 'q' 시세
   function updateWide() {
@@ -3243,13 +3474,17 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     var mobile = !host && (narrow || (window.innerHeight < 500 && window.matchMedia && matchMedia('(pointer: coarse)').matches));   // 휴대폰 가로도 탭 화면
     app.classList.toggle('m', mobile);
     if (mobile) {
-      var showQ = qOn && mview === 'q';
+      var showQ = qOn && mview === 'q', showN = news.on && mview === 'n', cur = showQ ? 'q' : showN ? 'n' : 'cal';
       q.classList.remove('collapsed');
-      app.classList.toggle('v-q', showQ); app.classList.toggle('v-cal', !showQ);
-      app.classList.toggle('nonav', !qOn); $('mnav').hidden = !qOn;
-      $('mnav').querySelectorAll('button').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-v') === (showQ ? 'q' : 'cal')); });
+      app.classList.toggle('v-q', showQ); app.classList.toggle('v-n', showN); app.classList.toggle('v-cal', cur === 'cal');
+      var navOn = qOn || news.on;                // 아래 탭: 달력 · 시세 · 뉴스 (끈 것은 안 보임)
+      app.classList.toggle('nonav', !navOn); $('mnav').hidden = !navOn;
+      $('mnav').querySelectorAll('button').forEach(function (b) {
+        var v = b.getAttribute('data-v'); b.classList.toggle('on', v === cur);
+        b.hidden = (v === 'q' && !qOn) || (v === 'n' && !news.on);
+      });
     } else {
-      app.classList.remove('v-q', 'v-cal', 'nonav');
+      app.classList.remove('v-q', 'v-n', 'v-cal', 'nonav');
       // 위젯 창이 너무 좁으면 시세 패널은 잠시 접어 둠 (넓히면 다시 보임)
       if (q.classList.contains('collapsed') !== narrow) q.classList.toggle('collapsed', narrow);
     }
@@ -3262,7 +3497,10 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     var m = $('main'), w = m.clientWidth;
     if (w > 0) { m.classList.toggle('wide', w >= 820); m.classList.toggle('tight', w < 470); }
     if (typeof qSyncRun === 'function') qSyncRun();
+    var nk = [mobile, mview, news.tab, news.on, compact].join();     // 뉴스 탭이 보이고 안 보이고가 바뀔 때만
+    if (nk !== nKeyLast) { nKeyLast = nk; nApplyTab(); }
   }
+  var nKeyLast = '';
   $('mnav').addEventListener('click', function (e) {
     var b = e.target.closest('button[data-v]'); if (!b) return;
     mview = b.getAttribute('data-v'); store.set('mview', mview); hideTip();
@@ -3290,7 +3528,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   window.__hc = { render: render, go: go, goDate: goDate, setToday: null, applyHostState: applyHostState, openSheet: openSheet,
                   qSetEdit: qSetEdit, qAdd: qAdd, qSearch: qSearch, fxSet: fxSet, dvOpen: dvOpen, dvClose: dvClose, dv: dv,
                   cashState: cashState, cashStateB: cashStateB, cashLabel: cashLabel, tcParse: tcParse, emParse: emParse, qData: qData,
-                  qList: qList, qWorldToggle: qWorldToggle, sessionOf: sessionOf };
+                  qList: qList, qWorldToggle: qWorldToggle, sessionOf: sessionOf, news: news, nMerge: nMerge, nChanged: nChanged, nParse: nParse };
 })();
 </script>
 </body>
