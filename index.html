@@ -278,6 +278,14 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 @media (prefers-reduced-motion: reduce) { .n-row.new { animation: none; background: color-mix(in srgb, var(--accent) 10%, transparent); } }
 .n-empty { padding: 18px 6px; color: var(--muted); font-size: 13px; }
 .n-foot { flex: none; padding: 6px 2px 0; border-top: 1px solid var(--line); margin-top: 6px; font-size: 11.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* 영어 기사 번역: 원문 줄(설정) · '번역 켜기' 막대 */
+.n-o { display: block; margin-top: 1px; font-size: 12px; font-weight: 500; line-height: 17px; color: var(--muted); }
+.n-trbar { display: flex; align-items: center; gap: 6px; flex: none; margin: 0 0 6px; padding: 5px 4px 5px 10px; border-radius: 9px; background: var(--bg2); font-size: 12.5px; line-height: 17px; color: var(--text2); }
+.n-trbar[hidden] { display: none; }
+.n-trbar span { flex: 1; min-width: 0; }
+.n-trbar button { flex: none; height: 28px; padding: 0 11px; border-radius: 14px; border: 1px solid var(--accent); color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); font-size: 12.5px; font-weight: 700; white-space: nowrap; }
+.n-trbar button[hidden] { display: none; }
+.n-trbar button.x { border-color: transparent; background: none; color: var(--muted); padding: 0 8px; }
 .listwrap.l-news .list, .listwrap.l-news .legend { display: none; }
 .list { overflow-y: auto; min-height: 0; flex: 1; margin: 0 -6px; padding: 0 6px; scrollbar-width: thin; scrollbar-color: var(--bg3) transparent; }
 .list::-webkit-scrollbar { width: 8px; }
@@ -559,6 +567,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   .q-wc { gap: 6px; }
   .ltab { height: 42px; }
   .n-chips button { height: 34px; padding: 0 14px; border-radius: 17px; font-size: 13.5px; }
+  .n-trbar button { height: 34px; padding: 0 14px; border-radius: 17px; }
   .n-row { padding-top: 10px; padding-bottom: 10px; }
   .seg button { height: 36px; }
 }
@@ -747,6 +756,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
         </div>
         <span class="n-st" id="nSt"></span>
       </div>
+      <div class="n-trbar" id="nTr" hidden><span id="nTrMsg"></span><button id="nTrOn" title="브라우저 내장 번역 — 무료, 이 기기 안에서 번역 (처음 한 번 번역 모델을 받음)">번역 켜기</button><button class="x" id="nTrNo" aria-label="번역 안 함" title="번역 안 함 (설정 › 뉴스에서 다시 켤 수 있음)">✕</button></div>
       <div class="n-list" id="nList" aria-live="polite"></div>
       <div class="n-foot" id="nFoot">제목만 · 누르면 원문 · 뉴시스 · FJ = FinancialJuice · WSJ · NYT</div>
     </div>
@@ -826,7 +836,10 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
       <section>
         <h4>뉴스 (달력 아래 · 오른쪽 '뉴스' 탭)</h4>
         <label class="switch">뉴스 받기 <input type="checkbox" id="optNews"></label>
-        <p class="hint">국내 뉴시스(속보·경제·금융·국제)와 해외 FinancialJuice 실시간 헤드라인·WSJ·NYT(영어 원문)의 제목을 모아 최신순으로 보여 줍니다. 누르면 원문 기사가 열립니다. 뉴스 탭을 보는 동안 1~2분마다(해외 기사는 5분마다) 받고, 다른 화면이면 5분에 한 번 새 속보 수만 셉니다. 로이터는 무료로 받을 곳이 없어 넣지 않았습니다.</p>
+        <label class="switch">영어 기사 제목을 한국어로 번역 <input type="checkbox" id="optNewsTr"></label>
+        <label class="switch">번역 아래에 영어 원문도 작게 <input type="checkbox" id="optNewsTrO"></label>
+        <p class="hint" id="trInfo"></p>
+        <p class="hint">국내 뉴시스(속보·경제·금융·국제)와 해외 FinancialJuice 실시간 헤드라인·WSJ·NYT의 제목을 모아 최신순으로 보여 줍니다. 누르면 원문 기사가 열립니다. 뉴스 탭을 보는 동안 1~2분마다(해외 기사는 5분마다) 받고, 다른 화면이면 5분에 한 번 새 속보 수만 셉니다. 로이터는 무료로 받을 곳이 없어 넣지 않았습니다.</p>
       </section>
       <section>
         <h4>실시간 시계 (한국 · 미국 뉴욕)</h4>
@@ -1488,6 +1501,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     $('optClock').checked = !!clockOn;
     $('optQuotes').checked = !!qOn;
     $('optNews').checked = !!news.on;
+    $('optNewsTr').checked = !!tr.on; $('optNewsTrO').checked = !!tr.orig; trUi();
     $('optAuto').checked = !!hostState.autostart;
     $('notes').innerHTML = ['데이터 기준일 ' + D.updated + ' · 범위 ' + D.from.replace('-', '.') + ' ~ ' + D.to.replace('-', '.')].concat(D.notes)
       .map(function (n) { return '<li>' + esc(n) + '</li>'; }).join('');
@@ -3324,10 +3338,13 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   var NEWS_NAME = { nw: '뉴시스', fj: 'FinancialJuice', wsj: 'WSJ', nyt: 'NYT' }, NEWS_SHORT = { nw: '뉴시스', fj: 'FJ', wsj: 'WSJ', nyt: 'NYT' };
   var NEWS_HOSTS = ['newsis.com', 'financialjuice.com', 'wsj.com', 'nytimes.com'];
   // 눈에 띄게 할 낱말 (시장을 움직이는 것 위주)
-  var NEWS_KW = /연준|파월|FOMC|기준금리|금리 ?(?:인상|인하|동결)|소비자물가|CPI|PCE|고용지표|비농업|실업률|환율|사이드카|서킷브레이커|급락|급등|폭락|폭등|관세|한국은행|\b(?:Fed|Powell|ECB|BOJ|BoJ|PBOC|OPEC|payrolls|recession|tariffs?|inflation)\b|\brate (?:hike|cut)s?\b|\bTreasury yields?\b|\bjobless claims\b/gi;
+  var NEWS_KW = /연준|파월|FOMC|기준금리|금리 ?(?:인상|인하|동결)|소비자물가|CPI|PCE|고용지표|비농업|실업률|환율|사이드카|서킷브레이커|급락|급등|폭락|폭등|관세|한국은행|인플레이션|경기 ?침체|국채 ?(?:금리|수익률)|실업수당|연방준비제도|일본은행|유럽중앙은행|인민은행|\b(?:Fed|Powell|ECB|BOJ|BoJ|PBOC|OPEC|payrolls|recession|tariffs?|inflation)\b|\brate (?:hike|cut)s?\b|\bTreasury yields?\b|\bjobless claims\b/gi;
   var news = { items: [], byId: {}, last: {}, err: {}, busy: {}, ok: {}, timer: 0, minT: 0,
                on: store.get('newsOn', true), tab: store.get('ltab', 'news'), filt: store.get('newsF', 'all'), seen: store.get('newsSeen', 0) };
   if (['all', 'brk', 'kr', 'world'].indexOf(news.filt) < 0) news.filt = 'all';
+  // 영어 제목 번역 상태 — 아래 '영어 기사 제목 → 한국어' 참고
+  var tr = { on: store.get('newsTr', true), orig: store.get('newsTrO', false), st: '', p: -1, sess: null, cur: null, busy: 0, fail: 0, why: '', ko: {}, dirty: 0, rt: 0, saveT: 0 };
+  (function () { var c = store.get('newsTrKo', null); if (c && typeof c === 'object' && !Array.isArray(c)) tr.ko = c; })();
   function nSafe(link) {                    // 링크는 위 뉴스 사이트의 https·http 주소만
     try {
       var u = new URL(link), h = u.hostname.toLowerCase();
@@ -3406,11 +3423,13 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
       }
       var isNew = !x.shown && x.t > seen0 && seen0 > 0; x.shown = true; if (x.t > top) top = x.t;
       var sec = x.secs.length ? ' ' + x.secs.join('·') : '', ago = nAgo(x.t, now);   // 출처·몇 분 전은 제목 끝에 이어서 (줄 아낌)
+      var ko = trOf(x);                     // 영어 기사: 번역이 있으면 한국어 제목 (원문은 마우스 올리면 · 설정하면 아래에 작게)
       h += '<a class="n-row' + (x.brk ? ' brk' : '') + (isNew ? ' new' : '') + '" href="' + esc(x.link) + '" target="_blank" rel="noopener noreferrer" title="' +
-        esc(NEWS_NAME[x.src] + sec + ' · ' + p.m + '/' + p.d + ' ' + pad(p.h) + ':' + pad(p.mi) + ' (' + ago + ') · 누르면 원문') + '">' +
+        esc(NEWS_NAME[x.src] + sec + ' · ' + p.m + '/' + p.d + ' ' + pad(p.h) + ':' + pad(p.mi) + ' (' + ago + ')' + (ko ? ' · 기계 번역\n원문: ' + x.title : '') + '\n누르면 원문 기사') + '">' +
         '<span class="n-t">' + pad(p.h) + ':' + pad(p.mi) + '</span>' +
-        '<span class="n-h"' + (x.en ? ' lang="en"' : '') + '>' + (x.brk ? '<i class="n-k">속보</i>' : x.tag ? '<i class="n-g">' + esc(x.tag) + '</i>' : '') + nHl(esc(x.title)) +
-        '<span class="n-m" lang="ko"><i class="n-s s-' + x.src + '"></i>' + NEWS_SHORT[x.src] + esc(sec) + ' · ' + ago + '</span></span></a>';
+        '<span class="n-h"' + (x.en && !ko ? ' lang="en"' : '') + '>' + (x.brk ? '<i class="n-k">속보</i>' : x.tag ? '<i class="n-g">' + esc(x.tag) + '</i>' : '') + nHl(esc(ko || x.title)) +
+        '<span class="n-m" lang="ko"><i class="n-s s-' + x.src + '"></i>' + NEWS_SHORT[x.src] + esc(sec) + ' · ' + ago + (ko ? ' · 번역' : '') + '</span>' +
+        (ko && tr.orig ? '<span class="n-o" lang="en">' + esc(x.title) + '</span>' : '') + '</span></a>';
     });
     if (!arr.length) h = '<div class="n-empty">' + (Object.keys(news.ok).length ? '이 거르기에 맞는 기사가 아직 없습니다.' : '뉴스를 불러오는 중…') + '</div>';
     var y = box.scrollTop;
@@ -3436,6 +3455,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   function nChanged() {
     if (!news.seen && news.items.length) { news.seen = news.items[0].t; store.set('newsSeen', news.seen); }   // 처음 켠 날: 이미 있던 기사는 '새 기사'로 안 셈
     if (nShown()) nRender(); else nBadge();
+    trUi(); trPump();
   }
   function nApplyTab() {                    // 목록 자리: 뉴스 ↔ 휴장·휴일 (휴대폰은 아래 '뉴스' 화면 / 달력 화면은 휴장·휴일)
     var mobile = $('app').classList.contains('m'), t = mobile ? (mview === 'n' ? 'news' : 'hol') : news.tab;
@@ -3445,6 +3465,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     $('ltHol').classList.toggle('on', t !== 'news'); $('ltHol').setAttribute('aria-selected', t !== 'news');
     if (t === 'news') { nRender(); nStatus(); } else nBadge();
     if (!news.timer || t === 'news') nTick();
+    trInit(); trUi();
   }
   $('listwrap').querySelector('.listhead').addEventListener('click', function (e) {
     var b = e.target.closest('.ltab'); if (!b) return;
@@ -3459,12 +3480,135 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     e.preventDefault(); var u = nSafe(a.getAttribute('href')); if (u) send({ type: 'open', url: u });
   });
   setInterval(function () { if (nShown()) nRender(); }, 60000);   // '몇 분 전' 고침
-  document.addEventListener('visibilitychange', function () { if (!document.hidden) nTick(); });
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) { nTick(); trPump(); } });
   $('optNews').onchange = function () {
     news.on = this.checked; store.set('newsOn', news.on);
     if (!news.on) { clearTimeout(news.timer); news.timer = 0; }
     updateWide(); nApplyTab();
   };
+
+  /* ── 영어 기사 제목 → 한국어: 브라우저 내장 번역(Translator API) — 이 기기 안에서 번역, 무료·키 없음 ──
+     공식문서(2026-11-20 확인): Chrome 138+·Edge 148+ 데스크톱만(휴대폰 안 됨), 처음 한 번 번역 모델을 받음(Chrome 은 사용자가 눌러야 받기 시작).
+     Windows 위젯(WebView2)·휴대폰처럼 없으면 영어 그대로. 번역은 브라우저가 한 번에 하나씩 처리 → 최신 기사부터 차례로, 결과는 이 기기에 500개 저장 */
+  function trWait(p, ms) {
+    return new Promise(function (res, rej) {
+      var t = setTimeout(function () { rej(new Error('응답 없음')); }, ms);
+      p.then(function (v) { clearTimeout(t); res(v); }, function (e) { clearTimeout(t); rej(e); });
+    });
+  }
+  function trOf(x) {                        // 이 기사의 한국어 제목 (없으면 '')
+    if (!tr.on || !x.en) return '';
+    if (!x.ko) { var c = tr.ko[x.id]; if (c && c[1] === x.title && typeof c[0] === 'string') x.ko = c[0]; }
+    return x.ko || '';
+  }
+  function trInit() {                       // 켜져 있으면 한 번: 이 브라우저에 내장 번역이 있는지
+    if (!tr.on || !news.on || tr.st) return;
+    var T = self.Translator;
+    if (!T || typeof T.availability !== 'function' || typeof T.create !== 'function') { tr.st = 'none'; trUi(); return; }
+    tr.st = 'chk'; trUi();
+    var p; try { p = Promise.resolve(T.availability({ sourceLanguage: 'en', targetLanguage: 'ko' })); } catch (er) { p = Promise.reject(er); }
+    trWait(p, 8000).then(function (a) {
+      tr.st = '';
+      if (a === 'available') trCreate('auto');
+      else if (a === 'downloadable' || a === 'downloading') trCreate('quiet');
+      else { tr.st = 'unav'; tr.why = String(a); trUi(); }
+    }, function (e) { tr.st = 'unav'; tr.why = (e && e.message) || ''; trUi(); });
+  }
+  function trCreate(how) {                  // how: 'auto'(받아 둔 모델) · 'quiet'(누르지 않고 시도) · 'click'(사용자가 누름)
+    if (tr.sess || tr.st === 'dl') return;
+    var me = {}, done = false;
+    tr.cur = me; tr.st = 'dl'; tr.p = -1; tr.why = ''; trUi();
+    var opt = { sourceLanguage: 'en', targetLanguage: 'ko', monitor: function (m) {
+      try { m.addEventListener('downloadprogress', function (e) { if (tr.cur !== me) return; var v = e.total > 1 ? e.loaded / e.total : e.loaded; tr.p = Math.max(0, Math.min(1, +v || 0)); trUi(); }); } catch (er) {}
+    } };
+    var p; try { p = Promise.resolve(self.Translator.create(opt)); } catch (er) { p = Promise.reject(er); }
+    p.then(function (sess) {
+      done = true;
+      if (tr.sess) { if (tr.sess !== sess) { try { sess.destroy(); } catch (er) {} } return; }
+      tr.sess = sess; tr.st = 'ready'; tr.cur = null; tr.fail = 0; tr.why = ''; trUi(); trPump();
+    }, function (e) {
+      done = true; if (tr.cur !== me) return; tr.cur = null;
+      tr.why = e ? ((e.name && e.name !== 'Error' ? e.name + ': ' : '') + (e.message || '')).slice(0, 80) : '';
+      tr.st = how === 'auto' ? 'unav' : (how === 'quiet' || (e && e.name === 'NotAllowedError')) ? 'need' : 'err';
+      trUi();
+    });
+    setTimeout(function () {                // 아무 진행 없이 멈춰 있으면 (모델을 받는 중이면 기다림)
+      if (done || tr.cur !== me || tr.p >= 0) return;
+      tr.cur = null; tr.st = how === 'auto' ? 'unav' : how === 'quiet' ? 'need' : 'err'; tr.why = '응답 없음'; trUi();
+    }, how === 'click' ? 120000 : 15000);
+  }
+  function trPump() {                       // 아직 번역 안 된 영어 제목을 최신 것부터 하나씩
+    if (!tr.on || tr.st !== 'ready' || !tr.sess || tr.busy || document.hidden) return;
+    var x = null;
+    for (var i = 0; i < news.items.length; i++) { var y = news.items[i]; if (y.en && !y.trBad && !trOf(y)) { x = y; break; } }
+    if (!x) return;
+    tr.busy = 1;
+    var p; try { p = Promise.resolve(tr.sess.translate(x.title)); } catch (er) { p = Promise.reject(er); }
+    trWait(p, 20000).then(function (k) {
+      k = String(k == null ? '' : k).replace(/\s+/g, ' ').trim();
+      if (k && k !== x.title) { x.ko = k; tr.ko[x.id] = [k, x.title, x.t]; tr.dirty = 1; trSave(); } else x.trBad = 1;
+      tr.fail = 0;
+    }, function (e) { x.trBad = 1; tr.fail++; tr.why = ((e && e.message) || '').slice(0, 80); })
+      .then(function () {
+        tr.busy = 0; trSoon();
+        if (tr.fail >= 5) { tr.st = 'err'; try { tr.sess.destroy(); } catch (er) {} tr.sess = null; trUi(); return; }   // 계속 실패하면 멈추고 '다시 시도'
+        setTimeout(trPump, 20);
+      });
+  }
+  function trSoon() {                       // 번역이 몇 개 끝나면 한 번에 다시 그림
+    if (tr.rt || !tr.dirty) return;
+    tr.rt = setTimeout(function () { tr.rt = 0; if (!tr.dirty) return; tr.dirty = 0; if (nShown()) nRender(); }, 600);
+  }
+  function trSave() {                       // 번역 결과를 이 기기에 저장 (최근 500개) — 다시 열면 바로 한국어
+    if (tr.saveT) return;
+    tr.saveT = setTimeout(function () {
+      tr.saveT = 0;
+      var ks = Object.keys(tr.ko);
+      if (ks.length > 500) {
+        ks.sort(function (a, b) { return (tr.ko[b][2] || 0) - (tr.ko[a][2] || 0); });
+        var keep = {}; ks.slice(0, 500).forEach(function (k) { keep[k] = tr.ko[k]; }); tr.ko = keep;
+      }
+      store.set('newsTrKo', tr.ko);
+    }, 3000);
+  }
+  function trInfoText() {
+    if (!tr.on) return '꺼 두면 해외 기사(FinancialJuice·WSJ·NYT)는 영어 그대로 보입니다.';
+    switch (tr.st) {
+      case 'ready': return '브라우저 내장 번역으로 이 기기 안에서 번역합니다(무료, 기사 제목이 밖으로 나가지 않음). 기계 번역이라 어색할 수 있어요 — 줄에 마우스를 올리면 원문이 보입니다.';
+      case 'dl': return '번역 모델을 받는 중' + (tr.p >= 0 ? ' (' + Math.round(tr.p * 100) + '%)' : '') + ' — 처음 한 번만 받습니다.';
+      case 'need': return '처음 한 번 번역 모델을 받아야 합니다 — 뉴스 목록 위 \'번역 켜기\'를 누르세요.';
+      case 'none': return (host ? '이 Windows 위젯(WebView2)에는' : '이 브라우저에는') + ' 내장 번역 기능이 없어 영어 그대로 보입니다. PC의 Chrome 138 이상 · Edge 148 이상에서 웹 주소로 열면 번역됩니다(휴대폰 브라우저는 아직 안 됨).';
+      case 'unav': return '이 브라우저에서는 영어 → 한국어 번역을 쓸 수 없어 영어 그대로 보입니다' + (tr.why ? ' (' + tr.why + ')' : '') + '.';
+      case 'err': return '번역이 멈췄습니다' + (tr.why ? ' (' + tr.why + ')' : '') + ' — 뉴스 목록 위 \'다시 시도\'를 누르세요.';
+      default: return '번역 기능 확인 중…';
+    }
+  }
+  function trUi() {                         // '번역 켜기' 막대 · 설정 안내
+    var bar = $('nTr'); if (!bar) return;
+    var anyEn = news.items.some(function (x) { return x.en; });
+    var show = tr.on && news.on && anyEn && (tr.st === 'need' || tr.st === 'dl' || tr.st === 'err');
+    bar.hidden = !show;
+    if (show) {
+      $('nTrMsg').textContent = tr.st === 'dl' ? '번역 모델 받는 중' + (tr.p >= 0 ? ' ' + Math.round(tr.p * 100) + '%' : '…') + ' (처음 한 번)' :
+        tr.st === 'err' ? '영어 기사 번역이 멈췄습니다' : '영어 제목을 한국어로 볼까요? (무료)';
+      $('nTrOn').hidden = tr.st === 'dl';
+      $('nTrOn').textContent = tr.st === 'err' ? '다시 시도' : '번역 켜기';
+    }
+    var info = $('trInfo'); if (info) info.textContent = trInfoText();
+    var o = $('optNewsTrO'); if (o) o.disabled = !tr.on;
+  }
+  $('nTrOn').onclick = function () {        // Chrome 은 사용자가 눌러야 번역 모델을 받기 시작함
+    tr.fail = 0; news.items.forEach(function (x) { x.trBad = 0; });
+    if (tr.sess) { tr.st = 'ready'; trUi(); trPump(); return; }
+    if (self.Translator && typeof self.Translator.create === 'function') trCreate('click');
+  };
+  $('nTrNo').onclick = function () { tr.on = false; store.set('newsTr', false); trUi(); if (nShown()) nRender(); };
+  $('optNewsTr').onchange = function () {
+    tr.on = this.checked; store.set('newsTr', tr.on);
+    if (tr.on) { trInit(); trPump(); }
+    trUi(); if (nShown()) nRender();
+  };
+  $('optNewsTrO').onchange = function () { tr.orig = this.checked; store.set('newsTrO', tr.orig); if (nShown()) nRender(); };
 
   /* ── 본문 너비에 따라 세로형/가로형 ── */
   var mview = store.get('mview', 'cal');     // 휴대폰 화면: 'cal' 달력 / 'q' 시세
@@ -3528,7 +3672,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   window.__hc = { render: render, go: go, goDate: goDate, setToday: null, applyHostState: applyHostState, openSheet: openSheet,
                   qSetEdit: qSetEdit, qAdd: qAdd, qSearch: qSearch, fxSet: fxSet, dvOpen: dvOpen, dvClose: dvClose, dv: dv,
                   cashState: cashState, cashStateB: cashStateB, cashLabel: cashLabel, tcParse: tcParse, emParse: emParse, qData: qData,
-                  qList: qList, qWorldToggle: qWorldToggle, sessionOf: sessionOf, news: news, nMerge: nMerge, nChanged: nChanged, nParse: nParse };
+                  qList: qList, qWorldToggle: qWorldToggle, sessionOf: sessionOf, news: news, nMerge: nMerge, nChanged: nChanged, nParse: nParse, tr: tr };
 })();
 </script>
 </body>
