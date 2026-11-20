@@ -281,7 +281,7 @@ namespace HolidayCalendar
                 try { cs.AreBrowserAcceleratorKeysEnabled = false; } catch { }
                 core.SetVirtualHostNameToFolderMapping(HostName, Path.Combine(AppDir, "app"), CoreWebView2HostResourceAccessKind.Allow);
                 core.WebMessageReceived += OnWebMessage;
-                core.NewWindowRequested += (s, a) => { a.Handled = true; };
+                core.NewWindowRequested += (s, a) => { a.Handled = true; OpenNews(a.Uri); };   // 뉴스 링크 → 기본 브라우저 (아래 주소만)
                 core.NavigationStarting += (s, a) =>
                 {
                     if (!a.Uri.StartsWith("https://" + HostName + "/", StringComparison.OrdinalIgnoreCase)) a.Cancel = true;
@@ -382,6 +382,7 @@ namespace HolidayCalendar
                 case "hide": HideWidget(); break;
                 case "resetPosition": ResetPosition(); EnsureOnScreen(); break;
                 case "exit": ExitApp(); break;
+                case "open": OpenNews(JsonString(json, "url")); break;
             }
         }
 
@@ -716,6 +717,18 @@ namespace HolidayCalendar
                 }
             }
             catch { return false; }
+        }
+
+        // 뉴스 기사: 아래 뉴스 사이트의 https·http 주소만 기본 브라우저로 연다 (그 밖의 주소·파일·프로그램은 무시)
+        static readonly string[] NewsHosts = { "newsis.com", "financialjuice.com", "wsj.com", "nytimes.com" };
+        static void OpenNews(string url)
+        {
+            Uri u;
+            if (string.IsNullOrEmpty(url) || !Uri.TryCreate(url, UriKind.Absolute, out u)) return;
+            if (u.Scheme != Uri.UriSchemeHttps && u.Scheme != Uri.UriSchemeHttp) return;
+            string h = u.Host.ToLowerInvariant();
+            foreach (string d in NewsHosts)
+                if (h == d || h.EndsWith("." + d, StringComparison.Ordinal)) { OpenExternal(u.AbsoluteUri); return; }
         }
 
         static void OpenExternal(string target)
