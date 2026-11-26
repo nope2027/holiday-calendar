@@ -3,12 +3,15 @@
 using System;
 using System.Diagnostics;
 using System.Drawing;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.WinForms;
@@ -63,7 +66,14 @@ namespace HolidayCalendar
             try
             {
                 Directory.CreateDirectory(Program.DataDir);
-                File.AppendAllText(Path.Combine(Program.DataDir, "error.log"),
+                string path = Path.Combine(Program.DataDir, "error.log");
+                var fi = new FileInfo(path);
+                if (fi.Exists && fi.Length > 1024 * 1024)   // 1MB 넘으면 error.old.log 로 넘기고 새로 시작
+                {
+                    File.Copy(path, Path.Combine(Program.DataDir, "error.old.log"), true);
+                    File.Delete(path);
+                }
+                File.AppendAllText(path,
                     DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "  " + text + Environment.NewLine, Encoding.UTF8);
             }
             catch { }
@@ -183,8 +193,21 @@ namespace HolidayCalendar
         int band = 6;
         const string HostName = "holiday-calendar.example";
 
+        // 2026-11-26 (사용자 PC 진단): 모니터가 꺼졌다 켜진 뒤 창이 배경색만 보이고 안 그려짐 (화면 프로세스·JS 는 살아 있음, 창 크기를 1px 바꾸면 돌아옴)
+        //  원인: Chromium '창 가림 계산'(CalculateNativeWinOcclusion)이 화면이 꺼질 때 창을 '가려짐'으로 판정한 뒤 다시 계산하지 않음 → 끔
+        //  그 위에 안전장치: 화면 켜짐·절전 해제·잠금 해제·화면 설정 변경 때 강제로 다시 그림(Wake), 화면 프로세스가 죽으면 다시 읽기·새로 만들기
+        const string BrowserArgs = "--disable-features=CalculateNativeWinOcclusion";
+        static readonly Guid GuidSessionDisplay = new Guid("2B84C20E-AD23-4DDF-93DB-05FFBD7EFCA5");   // 이 세션 화면 켜짐·꺼짐 (원격 데스크톱이면 원격 화면 기준)
+        static readonly Guid GuidConsoleDisplay = new Guid("6FE69556-704A-47A0-8F24-C28D936FDA47");   // 본체 모니터 켜짐·꺼짐 (GUID_CONSOLE_DISPLAY_STATE)
+        static readonly FieldInfo CtlField = typeof(WebView2).GetField("_coreWebView2Controller", BindingFlags.Instance | BindingFlags.NonPublic);
+
         readonly Settings st;
-        readonly WebView2 web;
+        WebView2 web;                      // 브라우저 프로세스가 죽으면 새로 만듦 (readonly 아님)
+        CoreWebView2 curCore;
+        IntPtr powerNotify, consoleNotify;
+        bool screenOff, consoleOff, recreating;
+        DateTime lastReload = DateTime.MinValue;
+        readonly Queue<DateTime> recreates = new Queue<DateTime>();
         readonly NotifyIcon tray;
         readonly ToolStripMenuItem miPin, miAuto, miCompact;
         readonly System.Windows.Forms.Timer saveTimer;
@@ -205,9 +228,7 @@ namespace HolidayCalendar
             BackColor = dark ? Color.FromArgb(22, 23, 27) : Color.White;
             Icon = LoadAppIcon(new Size(32, 32));
 
-            web = new WebView2();
-            web.Dock = DockStyle.Fill;
-            web.DefaultBackgroundColor = BackColor;
+            web = NewWeb();
             Controls.Add(web);
 
             // 알림 영역(트레이) 아이콘
@@ -260,17 +281,52 @@ namespace HolidayCalendar
             ApplySize();
             PlaceWindow();
             EnsureOnScreen();
+            // 화면(모니터) 켜짐·꺼짐 알림 받기 → WM_POWERBROADCAST (등록하면 지금 상태도 한 번 옴)
+            try
+            {
+                var g = GuidSessionDisplay; powerNotify = Native.RegisterPowerSettingNotification(Handle, ref g, 0 /* DEVICE_NOTIFY_WINDOW_HANDLE */);
+                var c = GuidConsoleDisplay; consoleNotify = Native.RegisterPowerSettingNotification(Handle, ref c, 0);
+            }
+            catch (Exception ex) { Log.Write(ex); }
         }
 
-        protected override async void OnLoad(EventArgs e)
+        protected override void OnHandleDestroyed(EventArgs e)
+        {
+            foreach (var h in new[] { powerNotify, consoleNotify })
+                if (h != IntPtr.Zero) { try { Native.UnregisterPowerSettingNotification(h); } catch { } }
+            powerNotify = consoleNotify = IntPtr.Zero;
+            base.OnHandleDestroyed(e);
+        }
+
+        protected override void OnLoad(EventArgs e)
         {
             base.OnLoad(e);
+            SystemEvents.PowerModeChanged += OnPowerModeChanged;
+            SystemEvents.DisplaySettingsChanged += OnDisplaySettingsChanged;
+            SystemEvents.SessionSwitch += OnSessionSwitch;
+            StartWeb(true);
+        }
+
+        WebView2 NewWeb()
+        {
+            var w = new WebView2();
+            w.Dock = DockStyle.Fill;
+            w.DefaultBackgroundColor = BackColor;
+            return w;
+        }
+
+        // 화면(WebView2) 준비: 처음 한 번 + 브라우저 프로세스가 죽어 새로 만들 때
+        async void StartWeb(bool first)
+        {
             try
             {
                 string udf = Path.Combine(Program.DataDir, "WebView2");
-                var env = await CoreWebView2Environment.CreateAsync(null, udf, null);
+                var opts = new CoreWebView2EnvironmentOptions();
+                opts.AdditionalBrowserArguments = BrowserArgs;
+                var env = await CoreWebView2Environment.CreateAsync(null, udf, opts);
                 await web.EnsureCoreWebView2Async(env);
                 var core = web.CoreWebView2;
+                curCore = core;
                 var cs = core.Settings;
                 cs.AreDefaultContextMenusEnabled = false;
                 cs.AreDevToolsEnabled = false;
@@ -281,6 +337,7 @@ namespace HolidayCalendar
                 try { cs.AreBrowserAcceleratorKeysEnabled = false; } catch { }
                 core.SetVirtualHostNameToFolderMapping(HostName, Path.Combine(AppDir, "app"), CoreWebView2HostResourceAccessKind.Allow);
                 core.WebMessageReceived += OnWebMessage;
+                core.ProcessFailed += OnProcessFailed;
                 core.NewWindowRequested += (s, a) => { a.Handled = true; OpenNews(a.Uri); };   // 뉴스 링크 → 기본 브라우저 (아래 주소만)
                 core.NavigationStarting += (s, a) =>
                 {
@@ -288,9 +345,11 @@ namespace HolidayCalendar
                 };
                 web.ZoomFactor = st.Zoom;
                 core.Navigate("https://" + HostName + "/index.html");
+                if (!first) Log.Write("화면 다시 만듦");
             }
             catch (WebView2RuntimeNotFoundException)
             {
+                if (!first) { Log.Write("화면 다시 만들기: WebView2 런타임을 찾지 못함"); return; }
                 var r = MessageBox.Show(
                     "이 프로그램은 Microsoft Edge WebView2 런타임이 필요합니다.\n\n" +
                     "[예] 설치 페이지 열기\n[아니요] 대신 웹 브라우저로 달력 열기",
@@ -302,9 +361,178 @@ namespace HolidayCalendar
             catch (Exception ex)
             {
                 Log.Write(ex);
+                if (!first) { RetryRecreateLater(); return; }
                 MessageBox.Show("화면을 불러오지 못했습니다.\n" + ex.Message + "\n\n자세한 내용: " + Path.Combine(Program.DataDir, "error.log"),
                     Program.AppTitle, MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
+            finally { if (!first) recreating = false; }
+        }
+
+        // ── 화면이 멈추거나 죽었을 때 ──
+        CoreWebView2Controller Ctl()
+        {
+            try { return web == null || web.IsDisposed || CtlField == null ? null : CtlField.GetValue(web) as CoreWebView2Controller; }
+            catch { return null; }
+        }
+
+        CoreWebView2 Core()
+        {
+            try { return web == null || web.IsDisposed ? null : web.CoreWebView2; }
+            catch { return null; }   // 브라우저 프로세스가 죽은 뒤에는 예외
+        }
+
+        // 강제로 다시 그리기: 부모 창 위치 알림 + (필요하면) 보이기 껐다 켜기 + 크기 1px 바꿨다 되돌리기
+        async void Wake(string why, int delayMs, bool toggleVisible)
+        {
+            try
+            {
+                if (delayMs > 0) await Task.Delay(delayMs);
+                if (IsDisposed || screenOff || !Visible) return;
+                var ctl = Ctl();
+                if (ctl == null)
+                {
+                    if (CtlField == null && Core() != null) { web.Visible = false; web.Visible = true; }   // WebView2 SDK 가 바뀌어 컨트롤러를 못 찾을 때
+                    return;
+                }
+                ctl.NotifyParentWindowPositionChanged();
+                if (toggleVisible)
+                {
+                    ctl.IsVisible = false;
+                    await Task.Delay(60);
+                    if (IsDisposed || Ctl() != ctl) return;
+                    ctl.IsVisible = Visible && !screenOff;
+                }
+                var r = web.ClientRectangle;
+                ctl.Bounds = new Rectangle(r.X, r.Y, r.Width, r.Height + 1);
+                await Task.Delay(60);
+                if (IsDisposed || Ctl() != ctl) return;
+                ctl.Bounds = web.ClientRectangle;
+                if (toggleVisible) Log.Write("화면 다시 그림: " + why);   // 절전·화면·잠금 신호 때만 기록 (트레이에서 다시 열 때는 안 남김)
+            }
+            catch (Exception ex) { Log.Write(ex); }
+        }
+
+        // 이 세션의 화면 상태: 0 꺼짐 · 1 켜짐 · 2 어둡게
+        void OnSessionDisplay(int state)
+        {
+            if (state == 0)
+            {
+                if (screenOff) return;
+                screenOff = true;
+                var ctl = Ctl();   // 꺼져 있는 동안은 화면을 '숨김'으로 → 화면의 시세·뉴스·시계도 멈춤 (CPU·GPU 아낌)
+                if (ctl != null && Visible) { try { ctl.IsVisible = false; } catch (Exception ex) { Log.Write(ex); } }
+                return;
+            }
+            if (!screenOff) return;
+            ScreenBack("화면 켜짐");
+        }
+
+        // 본체 모니터 상태: 꺼짐 → 켜짐일 때 다시 그림만 (멈춤은 위 세션 화면 기준)
+        void OnConsoleDisplay(int state)
+        {
+            bool was = consoleOff;
+            consoleOff = state == 0;
+            if (was && !consoleOff && !screenOff) { Wake("모니터 켜짐", 400, true); Wake("모니터 켜짐 (확인)", 3000, true); }
+        }
+
+        void ScreenBack(string why) { ScreenBack(why, 400); }
+        void ScreenBack(string why, int delayMs)
+        {
+            screenOff = false;
+            var ctl = Ctl();   // 먼저 바로 보이게 (아래 Wake 가 실패해도 화면은 돌아옴)
+            if (ctl != null && Visible) { try { ctl.IsVisible = true; } catch (Exception ex) { Log.Write(ex); } }
+            Wake(why, delayMs, true); Wake(why + " (확인)", delayMs + 2600, true);
+        }
+
+        // 화면이 꺼졌다고 알고 있는데 사용자가 창을 누르면(알림을 놓친 경우) 바로 되살림
+        protected override void OnActivated(EventArgs e)
+        {
+            base.OnActivated(e);
+            if (screenOff) ScreenBack("창 누름");
+        }
+
+        void OnPowerModeChanged(object sender, PowerModeChangedEventArgs e)
+        {
+            if (e.Mode == PowerModes.Resume) UiPost(() => ScreenBack("절전에서 깨어남", 1500));
+        }
+
+        void OnDisplaySettingsChanged(object sender, EventArgs e) { UiPost(() => Wake("화면 설정 바뀜", 800, true)); }
+
+        void OnSessionSwitch(object sender, SessionSwitchEventArgs e)
+        {
+            var r = e.Reason;
+            if (r == SessionSwitchReason.SessionUnlock || r == SessionSwitchReason.ConsoleConnect || r == SessionSwitchReason.RemoteConnect)
+                UiPost(() => { if (screenOff) ScreenBack("잠금 해제·연결"); else Wake("잠금 해제·연결", 800, true); });
+        }
+
+        void UiPost(Action a)
+        {
+            try { if (IsHandleCreated && !IsDisposed) BeginInvoke(a); } catch { }
+        }
+
+        void OnProcessFailed(object sender, CoreWebView2ProcessFailedEventArgs e)
+        {
+            CoreWebView2ProcessFailedKind kind;
+            try { kind = e.ProcessFailedKind; } catch { return; }
+            string more = "";
+            try { more = " · " + e.Reason + " · 종료 코드 " + e.ExitCode; } catch { }
+            Log.Write("WebView2 프로세스 문제: " + kind + more);
+            if (kind == CoreWebView2ProcessFailedKind.BrowserProcessExited || kind == CoreWebView2ProcessFailedKind.RenderProcessExited) ready = false;
+            var src = sender as CoreWebView2;
+            UiPost(() => OnProcessFailedUi(src, kind));
+        }
+
+        void OnProcessFailedUi(CoreWebView2 src, CoreWebView2ProcessFailedKind kind)
+        {
+            if (src != null && src != curCore) return;   // 새로 만든 뒤에 도착한 옛 알림
+            switch (kind)
+            {
+                case CoreWebView2ProcessFailedKind.BrowserProcessExited:
+                    Recreate("브라우저 프로세스 종료");
+                    break;
+                case CoreWebView2ProcessFailedKind.RenderProcessExited:
+                case CoreWebView2ProcessFailedKind.RenderProcessUnresponsive:
+                    if ((DateTime.Now - lastReload).TotalMinutes < 3) { Recreate("화면 프로세스 문제가 3분 안에 다시 생김"); break; }
+                    lastReload = DateTime.Now;
+                    ready = false;
+                    var core = Core();
+                    if (core == null) { Recreate("다시 읽기 못 함"); break; }
+                    try { core.Reload(); Log.Write("화면 다시 읽음: " + kind); }
+                    catch (Exception ex) { Log.Write(ex); Recreate("다시 읽기 실패"); }
+                    break;
+                case CoreWebView2ProcessFailedKind.GpuProcessExited:
+                    Wake("GPU 프로세스 다시 시작", 1500, false);   // WebView2 가 GPU 프로세스를 새로 띄움 → 한 번 다시 그림
+                    break;
+            }
+        }
+
+        // 브라우저 프로세스가 죽으면 이 WebView2 는 다시 못 씀 → 새로 만들어 같은 화면을 다시 띄움 (30분에 3번까지)
+        void Recreate(string why)
+        {
+            if (recreating || IsDisposed) return;
+            var now = DateTime.Now;
+            while (recreates.Count > 0 && (now - recreates.Peek()).TotalMinutes > 30) recreates.Dequeue();
+            if (recreates.Count >= 3) { Log.Write("화면 다시 만들기 건너뜀 (30분에 3번 넘음): " + why); return; }
+            recreates.Enqueue(now);
+            Log.Write("화면 다시 만들기: " + why);
+            recreating = true; ready = false; curCore = null;
+            var old = web;
+            try
+            {
+                web = NewWeb();
+                Controls.Add(web);
+                web.BringToFront();
+                if (old != null) { Controls.Remove(old); old.Dispose(); }
+            }
+            catch (Exception ex) { Log.Write(ex); }
+            StartWeb(false);
+        }
+
+        async void RetryRecreateLater()
+        {
+            recreating = false;
+            await Task.Delay(15000);
+            if (!IsDisposed && curCore == null) Recreate("다시 만들기 재시도");
         }
 
         static string AppDir { get { return AppDomain.CurrentDomain.BaseDirectory; } }
@@ -389,8 +617,9 @@ namespace HolidayCalendar
         // Esc 는 WebView2 가 '가속 키'로 따로 넘기므로 화면에 직접 전달
         bool ForwardEscape()
         {
-            if (web.CoreWebView2 == null) return false;
-            try { web.CoreWebView2.PostWebMessageAsJson("{\"type\":\"key\",\"key\":\"Escape\"}"); return true; }
+            var core = Core();
+            if (core == null) return false;
+            try { core.PostWebMessageAsJson("{\"type\":\"key\",\"key\":\"Escape\"}"); return true; }
             catch (Exception ex) { Log.Write(ex); return false; }
         }
 
@@ -408,7 +637,8 @@ namespace HolidayCalendar
 
         void PushState()
         {
-            if (!ready || web.CoreWebView2 == null) return;
+            var core = Core();
+            if (!ready || core == null) return;
             string json = "{\"type\":\"state\",\"pin\":" + (st.Pin ? "true" : "false") +
                 ",\"autostart\":" + (AutoStart.IsOn() ? "true" : "false") +
                 ",\"zoom\":" + st.Zoom.ToString("0.###", CultureInfo.InvariantCulture) +
@@ -416,7 +646,7 @@ namespace HolidayCalendar
                 ",\"w\":" + LogicalSize().Width.ToString(CultureInfo.InvariantCulture) +
                 ",\"h\":" + LogicalSize().Height.ToString(CultureInfo.InvariantCulture) +
                 ",\"compact\":" + (st.Compact ? "true" : "false") + "}";
-            try { web.CoreWebView2.PostWebMessageAsJson(json); } catch (Exception ex) { Log.Write(ex); }
+            try { core.PostWebMessageAsJson(json); } catch (Exception ex) { Log.Write(ex); }
         }
 
         static string JsonRaw(string json, string key)
@@ -439,8 +669,9 @@ namespace HolidayCalendar
 
         void PostToPage(string json)
         {
-            if (!ready || web.CoreWebView2 == null) return;
-            try { web.CoreWebView2.PostWebMessageAsJson(json); } catch (Exception ex) { Log.Write(ex); }
+            var core = Core();
+            if (!ready || core == null) return;
+            try { core.PostWebMessageAsJson(json); } catch (Exception ex) { Log.Write(ex); }
         }
 
         // 시계만 보기 ↔ 전체: 왼쪽 위(화면 오른쪽 끝에 붙어 있으면 오른쪽 위)를 기준으로 크기만 바꿈
@@ -503,12 +734,14 @@ namespace HolidayCalendar
 
         void ShowWidget()
         {
+            bool wasOff = screenOff;   // 화면이 꺼졌다고 알고 있었어도 트레이에서 여는 건 사용자가 보고 있다는 뜻
             if (!Visible) Show();
             if (WindowState != FormWindowState.Normal) WindowState = FormWindowState.Normal;
             EnsureOnScreen();
             TopMost = st.Pin;
             Activate();
             Native.SetForegroundWindow(Handle);
+            if (wasOff) ScreenBack("트레이에서 열기"); else Wake("다시 보이기", 150, false);
         }
 
         void HideWidget()
@@ -542,6 +775,9 @@ namespace HolidayCalendar
 
         protected override void OnFormClosed(FormClosedEventArgs e)
         {
+            SystemEvents.PowerModeChanged -= OnPowerModeChanged;
+            SystemEvents.DisplaySettingsChanged -= OnDisplaySettingsChanged;
+            SystemEvents.SessionSwitch -= OnSessionSwitch;
             base.OnFormClosed(e);
             Application.Exit();
         }
@@ -688,6 +924,16 @@ namespace HolidayCalendar
                 return;
             }
             base.WndProc(ref m);
+            if (m.Msg == 0x0218 /* WM_POWERBROADCAST */ && m.WParam.ToInt64() == 0x8013 /* PBT_POWERSETTINGCHANGE */ && m.LParam != IntPtr.Zero)
+            {
+                try
+                {
+                    var ps = (Native.POWERBROADCAST_SETTING)Marshal.PtrToStructure(m.LParam, typeof(Native.POWERBROADCAST_SETTING));
+                    if (ps.DataLength >= 4 && ps.PowerSetting == GuidSessionDisplay) OnSessionDisplay(ps.Data);
+                    else if (ps.DataLength >= 4 && ps.PowerSetting == GuidConsoleDisplay) OnConsoleDisplay(ps.Data);
+                }
+                catch (Exception ex) { Log.Write(ex); }
+            }
             if (m.Msg == WM_SETTINGCHANGE && ready)
             {
                 // 작업 표시줄·테마가 바뀌면 화면 밖으로 나가지 않게
@@ -750,5 +996,10 @@ namespace HolidayCalendar
         [DllImport("user32.dll")] public static extern IntPtr SendMessage(IntPtr hWnd, int msg, IntPtr wParam, IntPtr lParam);
         [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hWnd);
         [DllImport("dwmapi.dll")] public static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int value, int size);
+
+        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        public struct POWERBROADCAST_SETTING { public Guid PowerSetting; public uint DataLength; public int Data; }
+        [DllImport("user32.dll", SetLastError = true)] public static extern IntPtr RegisterPowerSettingNotification(IntPtr hRecipient, ref Guid powerSettingGuid, int flags);
+        [DllImport("user32.dll", SetLastError = true)] public static extern bool UnregisterPowerSettingNotification(IntPtr handle);
     }
 }
