@@ -644,6 +644,15 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .qd-read .k { color: var(--muted); margin-right: 3px; font-weight: 500; }
 .qd-read b { color: var(--text); }
 .qd-read .up { color: var(--q-up); font-weight: 700; } .qd-read .dn { color: var(--q-dn); font-weight: 700; } .qd-read .flat { color: var(--muted); font-weight: 700; }
+/* 차트에 보이는 구간 요약: 시가 · 고점(때) · 저점(때) · 종가 · 등락 · 고저폭 */
+.qd-rng { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 11px; min-height: 19px; margin: 0 0 6px; padding: 4px 8px; border-radius: 8px; background: var(--bg2); font-size: 13px; color: var(--text2); font-variant-numeric: tabular-nums; }
+.qd-rng:empty { display: none; }
+.qd-rng .lab { font-weight: 700; color: var(--text); }
+.qd-rng .k { color: var(--muted); margin-right: 3px; font-weight: 500; }
+.qd-rng b { color: var(--text); font-weight: 700; }
+.qd-rng small { margin-left: 3px; font-size: 11.5px; color: var(--muted); }
+.qd-rng .up { color: var(--q-up); font-weight: 700; } .qd-rng .dn { color: var(--q-dn); font-weight: 700; } .qd-rng .flat { color: var(--muted); font-weight: 700; }
+.qd.nohist .qd-rng { display: none; }
 .qd-cv { position: relative; height: clamp(230px, 43vh, 500px); }
 .qd-cv canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; cursor: crosshair; }
 .qd-cv canvas.grab { cursor: grabbing; }
@@ -673,7 +682,8 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .qd-tbl tbody tr[data-i]:hover td { background: var(--bg2); }
 .qd-tbl tr.sel td { background: color-mix(in srgb, var(--accent) 12%, transparent); }
 .qd-tbl tr.yr td { text-align: left; font-size: 12px; font-weight: 700; color: var(--muted); padding: 10px 2px 4px; }
-.qd-tbl .ext { display: none; }
+.qd-tbl .ext, .qd-tbl .ext2 { display: none; }
+@container (min-width: 470px) { .qd-tbl .ext2 { display: table-cell; } }   /* 좁으면: 날짜·종가·등락률·고가·저가·거래량 → 넓히면 시가 → 전일비 */
 @container (min-width: 560px) { .qd-tbl .ext { display: table-cell; } }
 .qd-note { flex: none; margin: 6px 0 0; font-size: 11.5px; line-height: 1.5; color: var(--muted); }
 .qd-note p { margin: 0; }
@@ -969,6 +979,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
           <div class="qd-leg" id="dvLeg"></div>
         </div>
         <div class="qd-read" id="dvRead"></div>
+        <div class="qd-rng" id="dvRng" title="지금 차트에 보이는 봉 기준 — 끌거나 휠로 넓히면 같이 바뀜"></div>
         <div class="qd-cv" id="dvCv"><canvas id="dvCanvas" aria-hidden="true"></canvas><div class="qd-msg" id="dvMsg" hidden></div></div>
       </div>
       <div class="qd-side">
@@ -2789,7 +2800,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
                  d: { n: '일봉', cnt: 90, u: '일' }, w: { n: '주봉', cnt: 60, u: '주' }, m: { n: '월봉', cnt: 48, u: '개월' }, y: { n: '년봉', cnt: 30, u: '년' } };
   var DV_FONT = '"Pretendard Variable", Pretendard, "Malgun Gothic", system-ui, sans-serif';
   var dv = { b: null, per: store.get('dvPer', 'd'), daily: null, ext: {}, errK: {}, failAt: {}, D: null, S: null, hover: -1, pin: -1, end: -1, slot: 0, ptrY: null,
-             busy: null, refT: null, tick: 0, raf: 0, pushed: false, skipPop: false, L: null, drag: null, touching: false, axisW: 56, back: null };
+             busy: null, refT: null, tick: 0, raf: 0, pushed: false, skipPop: false, L: null, drag: null, touching: false, axisW: 56, back: null, rngKey: '' };
   if (!DV_PER[dv.per]) dv.per = 'd';
   var dvCache = {}, dvHistSrc = {};          // 키 = 기호:자료(1·30·d·y) / dvHistSrc: 현물 지수 차트 자료를 받은 곳 (em·tc)
   function dvKind(per) { return per === 'w' || per === 'm' ? 'd' : per; }     // 받아 오는 자료: 1분 · 30분 · 일(일·주·월) · 년
@@ -3047,6 +3058,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     else if (per === 'y') ps.push('년봉 = 1~12월 한 해 · ' + (cm ? (hs === 'em' ? '기록이 있는 처음부터' : '일봉으로 만든 최근 몇 년 (전체 기록은 동방재부 차트 서버가 될 때)') : '거래를 시작한 뒤부터 (짧으면 1~2개)'));
     else if (cm) ps.push('하루 봉 = 거래일 (주말·휴장일 없음)' + (cash ? ' · 정규장 ' + cashHours(I.mkt, Date.now()) + ' (한국 시각)' : ''));
     else ps.push('하루 봉은 한국시간 오전 9시에 바뀜 · 주봉은 월~일 · 24시간 거래라 주말 봉도 있음');
+    ps.push('위 회색 줄 = 차트에 보이는 구간 요약(시가 → 종가 등락 · 고점 · 저점 · 고저폭) · 차트의 고점·저점 옆 % = 지금 가격이 그 값보다 몇 % 위(+)·아래(−)');
     ps.push('진한 거래량 = 직전 20봉 평균의 2배 이상' + (cm ? ' (거래량이 없는 지수도 있음)' : '') + ' · 출처: ' + src);
     if (cash && !dvAnyHist(b)) ps = ['정규장 ' + cashHours(I.mkt, Date.now()) + ' (한국 시각) · 장 시간에만 움직임', '출처: ' + src + ' — 시세 기록은 무료로 받을 곳이 없어 차트는 없음'];
     if (qIsKrw(b)) ps.push(dvKrw() ? '원화 = 달러 가격 × 지금 환율 ' + fx2(fx.k) + '원 (지난 가격도 지금 환율로 환산)' : '환율을 받기 전이라 달러로 표시');
@@ -3066,12 +3078,47 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     if (!S || !S.length) { el.innerHTML = ''; return; }
     var i = dv.hover >= 0 ? dv.hover : dv.pin >= 0 ? dv.pin : S.length - 1;
     if (i >= S.length) i = S.length - 1;
-    var x = S[i], k = dvMul(), pct = x.p ? (x.c - x.p) / x.p * 100 : null, cls = dvCls(pct);
+    var x = S[i], k = dvMul(), pct = x.p ? (x.c - x.p) / x.p * 100 : null, cls = dvCls(pct), live = i === S.length - 1 && dvIsLive(x.t, dv.per);
     var it = function (lab, v) { return '<span><span class="k">' + lab + '</span>' + v + '</span>'; };
-    el.innerHTML = '<span class="d">' + esc(dvWhen(x.t, dv.per)) + (i === S.length - 1 && dvIsLive(x.t, dv.per) ? ' <span class="k">진행 중</span>' : '') + '</span>' +
-      it('시', dvFmt(x.o * k)) + it('고', dvFmt(x.h * k)) + it('저', dvFmt(x.l * k)) + it('종', '<b>' + dvFmt(x.c * k) + '</b>') +
-      (pct == null ? '' : '<span class="' + cls + '">' + (cls === 'up' ? '+' : cls === 'dn' ? '−' : '') + Math.abs(pct).toFixed(2) + '%</span>') +
+    el.innerHTML = '<span class="d">' + esc(dvWhen(x.t, dv.per)) + (live ? ' <span class="k">진행 중</span>' : '') + '</span>' +
+      it('시가', dvFmt(x.o * k)) + it('고가', dvFmt(x.h * k)) + it('저가', dvFmt(x.l * k)) + it(live ? '현재' : '종가', '<b>' + dvFmt(x.c * k) + '</b>') +
+      (pct == null ? '' : '<span><span class="' + cls + '">' + dvChgText(x.c - x.p, pct, x.c) + '</span> <span class="k">' + DV_CHG[dv.per] + '</span></span>') +
       it('거래량', dvVol(x.v) + (x.va > 0 && x.v >= 2 * x.va ? ' <span class="k">(평균 ' + (x.v / x.va).toFixed(1) + '배)</span>' : ''));
+  }
+
+  var DV_CHG = { '1': '직전 봉 대비', '30': '직전 봉 대비', d: '전일 대비', w: '전주 대비', m: '전월 대비', y: '전년 대비' };
+  function dvChgText(df, pct, ref) {         // '▲29.59 (+0.63%)'
+    var cls = dvCls(pct), k = dvMul();
+    return (cls === 'up' ? '▲' : cls === 'dn' ? '▼' : '') + dvFmt(Math.abs(df) * k, dvDg(ref * k)) + ' (' + (cls === 'up' ? '+' : cls === 'dn' ? '−' : '') + Math.abs(pct).toFixed(2) + '%)';
+  }
+  function dvShort(t, per, full) {           // 구간 요약용 짧은 때 (full: 날짜·해까지)
+    if (dvIntra(per)) { var p = dvKst(t); return (full ? p.m + '/' + p.d + ' ' : '') + p.hm; }
+    var d = new Date(t), y = d.getUTCFullYear(), m = d.getUTCMonth() + 1;
+    if (per === 'y') return y + '년';
+    if (per === 'm') return (full ? y + '.' : '') + m + '월';
+    return (full ? y + '.' : '') + m + '/' + d.getUTCDate();
+  }
+  function dvRange(L) {                      // 차트에 보이는 구간 요약 (끌기·휠로 바뀌면 같이)
+    var el = $('dvRng'), S = dv.S;
+    if (!L || !S || !S.length) { if (dv.rngKey !== '') { dv.rngKey = ''; el.innerHTML = ''; } return; }
+    var s = L.s, e = L.e, per = dv.per, k = dvMul(), ih = s, il = s, i;
+    for (i = s; i <= e; i++) { if (S[i].h > S[ih].h) ih = i; if (S[i].l < S[il].l) il = i; }
+    var key = [dv.b, per, s, e, S.length, S[s].o, S[e].c, S[ih].h, S[il].l, k].join('|');
+    if (key === dv.rngKey) return;
+    dv.rngKey = key;
+    var o = S[s].o, c = S[e].c, hi = S[ih].h, lo = S[il].l, pct = o ? (c - o) / o * 100 : 0, cls = dvCls(pct);
+    var live = e === S.length - 1 && dvIsLive(S[e].t, per), intra = dvIntra(per);
+    var y0 = new Date(S[s].t).getUTCFullYear(), y1 = new Date(S[e].t).getUTCFullYear();
+    var multi = intra ? dvKst(S[s].t).key !== dvKst(S[e].t).key : y0 !== y1;      // 날(분봉)·해(일·주·월)가 바뀌면 끝·고점·저점에도 날짜
+    var span = per === 'y' ? y0 + (y0 === y1 ? '년' : ' ~ ' + y1 + '년') : dvShort(S[s].t, per, intra || multi) + ' ~ ' + dvShort(S[e].t, per, multi);
+    var it = function (lab, v) { return '<span><span class="k">' + lab + '</span>' + v + '</span>'; };
+    el.innerHTML = '<span class="lab">보이는 구간</span><span>' + esc(span) + ' <small>' + (e - s + 1) + '봉</small></span>' +
+      it('시가', dvFmt(o * k)) +
+      it('고점', dvFmt(hi * k) + '<small>' + esc(dvShort(S[ih].t, per, multi)) + '</small>') +
+      it('저점', dvFmt(lo * k) + '<small>' + esc(dvShort(S[il].t, per, multi)) + '</small>') +
+      it(live ? '현재' : '종가', '<b>' + dvFmt(c * k) + '</b>') +
+      '<span><span class="' + cls + '">' + dvChgText(c - o, pct, c) + '</span> <span class="k">시가 대비</span></span>' +
+      it('고저폭', (lo > 0 ? ((hi - lo) / lo * 100).toFixed(2) : '0.00') + '%');
   }
 
   /* 시세 표 (최근 → 과거, 최대 400줄): 일·주·월은 일별, 1분·30분·년은 그 봉 */
@@ -3085,9 +3132,9 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     return '<tr data-i="' + i + '"' + (dv.pin === i && dv.per === per ? ' class="sel"' : '') + '>' +
       '<td' + (we ? ' class="we"' : '') + '>' + when + (live ? '<small>진행 중</small>' : '') + '</td>' +
       '<td><b>' + dvFmt(x.c * k) + '</b></td>' +
-      '<td class="' + cls + '">' + (df == null ? '—' : (cls === 'up' ? '▲' : cls === 'dn' ? '▼' : '') + dvFmt(Math.abs(df) * k, dvDg(x.c * k))) + '</td>' +
+      '<td class="ext ' + cls + '">' + (df == null ? '—' : (cls === 'up' ? '▲' : cls === 'dn' ? '▼' : '') + dvFmt(Math.abs(df) * k, dvDg(x.c * k))) + '</td>' +
       '<td class="' + cls + '">' + (pct == null ? '—' : (cls === 'up' ? '+' : cls === 'dn' ? '−' : '') + Math.abs(pct).toFixed(2) + '%') + '</td>' +
-      '<td class="ext">' + dvFmt(x.o * k) + '</td><td class="ext">' + dvFmt(x.h * k) + '</td><td class="ext">' + dvFmt(x.l * k) + '</td>' +
+      '<td class="ext2">' + dvFmt(x.o * k) + '</td><td>' + dvFmt(x.h * k) + '</td><td>' + dvFmt(x.l * k) + '</td>' +
       '<td' + (x.va > 0 && x.v >= 2 * x.va ? ' class="hot" title="직전 20봉 평균의 ' + (x.v / x.va).toFixed(1) + '배"' : '') + '>' + dvVol(x.v) + '</td></tr>';
   }
   function dvTable() {
@@ -3103,7 +3150,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
       if (per !== 'y') { var gk = grp(D[i].t); if (gk !== prev) { h.push('<tr class="yr"><td colspan="8">' + gk + '</td></tr>'); prev = gk; } }
       h.push(dvRow(D, i, k));
     }
-    el.innerHTML = '<thead><tr><th>' + TH[1] + '</th><th>종가</th><th>' + TH[2] + '</th><th>등락률</th><th class="ext">시가</th><th class="ext">고가</th><th class="ext">저가</th><th>거래량</th></tr></thead><tbody>' + h.join('') + '</tbody>';
+    el.innerHTML = '<thead><tr><th>' + TH[1] + '</th><th>종가</th><th class="ext">' + TH[2] + '</th><th>등락률</th><th class="ext2">시가</th><th>고가</th><th>저가</th><th>거래량</th></tr></thead><tbody>' + h.join('') + '</tbody>';
   }
   function dvTableTop() {                    // 실시간: 맨 윗줄(오늘)만 고침
     var tb = $('dvTbl').tBodies[0], D = dv.D;
@@ -3206,7 +3253,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     var g = cv.getContext('2d');
     g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H);
     var S = dv.S; dv.L = null;
-    if (!S || !S.length) return;
+    if (!S || !S.length) { dvRange(null); return; }
     var C = dvColors(), k = dvMul(), L = dvWin(W), s = L.s, e = L.e, slot = L.slot, plotR = L.plotR;
     var xAxisH = 22, gap = 10, top = 8, volH = Math.max(36, Math.round((H - xAxisH) * 0.22));
     var priceB = H - xAxisH - volH - gap, volTop = priceB + gap, volB = H - xAxisH;
@@ -3223,6 +3270,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     var Y = function (raw) { return yv(raw * k); };
     L.top = top; L.priceB = priceB; L.volB = volB; L.lo = lo; L.hi = hi; L.W = W; L.H = H;
     dv.L = L;
+    dvRange(L);
     g.textBaseline = 'middle';
     // 가로 눈금선 + 오른쪽 가격
     var nt = dvNice(lo, hi, Math.max(3, Math.min(6, Math.round((priceB - top) / 56))));
@@ -3277,6 +3325,22 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
       g.stroke();
     });
     g.restore();
+    // 보이는 구간의 고점·저점 (옆 % = 지금 가격이 그 값보다 몇 % 위·아래)
+    if (e - s >= 2) {
+      var ih = s, il = s, cur = S[S.length - 1].c;
+      for (i = s; i <= e; i++) { if (S[i].h > S[ih].h) ih = i; if (S[i].l < S[il].l) il = i; }
+      g.font = '700 11.5px ' + DV_FONT; g.textAlign = 'left'; g.textBaseline = 'middle'; g.lineJoin = 'round';
+      [[ih, S[ih].h, 1], [il, S[il].l, 0]].forEach(function (q) {
+        var v = q[1], pc = (cur - v) / v * 100, pcl = dvCls(pc);
+        var txt = (q[2] ? '고점 ' : '저점 ') + dvFmt(v * k) + ' (' + (pcl === 'up' ? '+' : pcl === 'dn' ? '−' : '') + Math.abs(pc).toFixed(2) + '%)';
+        var tw = g.measureText(txt).width, px = xc(q[0]), py = Y(v);
+        var tx = Math.max(2, Math.min(plotR - tw - 2, px - tw / 2));
+        var ty = q[2] ? Math.max(top + 7, py - 10) : Math.min(priceB - 7, py + 11);
+        g.strokeStyle = C.bg; g.lineWidth = 4; g.strokeText(txt, tx, ty);
+        g.fillStyle = q[2] ? C.up : C.dn; g.fillText(txt, tx, ty);
+        g.fillRect(Math.round(px) - 3, Math.round(py) + (q[2] ? -3 : 2), 7, 1);      // 그 값 위치 짧은 선
+      });
+    }
     // 거래 기록이 시작된 곳 (왼쪽이 비어 있을 때)
     if (s === 0 && !dvIntra(dv.per) && xc(0) - slot > 70) {
       g.fillStyle = C.muted; g.textAlign = 'right'; g.font = '500 11px ' + DV_FONT;
