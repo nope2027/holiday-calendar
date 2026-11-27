@@ -877,6 +877,10 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .hm-tip .acts { display: flex; gap: 6px; margin-top: 8px; }
 .hm-tip .acts button { height: 32px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line); font-size: 13px; font-weight: 600; color: var(--text); }
 .hm-tip .acts button:hover { background: var(--bg2); }
+.hm-tip dd small { margin-left: 5px; font-size: 11.5px; font-weight: 500; color: var(--muted); }
+.hm-tip .note { margin-top: 8px; font-size: 12px; line-height: 1.45; color: var(--muted); white-space: normal; }
+.hm-tip .hint { margin-top: 5px; font-size: 11.5px; color: var(--muted); }
+.hm .qd-msg .sub { display: block; margin-top: 4px; font-size: 12.5px; color: var(--muted); }
 .hm-tip .x { position: absolute; top: 4px; right: 4px; width: 28px; height: 28px; border-radius: 7px; display: none; align-items: center; justify-content: center; color: var(--muted); }
 .hm-tip.pin .x { display: inline-flex; }
 .hm-tip .x:hover { background: var(--bg2); color: var(--text); }
@@ -1024,7 +1028,10 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
           <button role="tab" data-m="kr">한국<i class="lv"></i></button><button role="tab" data-m="us">미국<i class="lv"></i></button><button role="tab" data-m="jp">일본<i class="lv"></i></button>
         </div>
         <div class="qd-per hm-vw" id="hmVw" role="tablist" aria-label="보기">
-          <button role="tab" data-v="map" title="크기 = 시가총액 · 색 = 오늘 등락률">지도</button><button role="tab" data-v="list" title="표로 보기 · 머리글을 누르면 정렬">목록</button>
+          <button role="tab" data-v="map" title="크기 = 시가총액 · 색 = 등락률">지도</button><button role="tab" data-v="list" title="표로 보기 · 머리글을 누르면 정렬">목록</button>
+        </div>
+        <div class="qd-per hm-pr" id="hmPr" role="tablist" aria-label="기간">
+          <button role="tab" data-p="1d" title="오늘 등락률 (전일 종가 대비)">1일</button><button role="tab" data-p="1w" title="7일 전 종가 대비">7일</button><button role="tab" data-p="1m" title="한 달 전 종가 대비">1개월</button><button role="tab" data-p="1y" title="1년 전 종가 대비">1년</button>
         </div>
       </div>
       <button class="icon qd-x" id="hmClose" title="닫기 (Esc)" aria-label="닫기"><svg viewBox="0 0 24 24"><path d="M7 7l10 10M17 7L7 17"/></svg></button>
@@ -2337,7 +2344,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     }
   }
   function qNorm(s) { return String(s || '').toLowerCase().replace(/[\s·.\-_/()]/g, ''); }
-  function qPool() { return Object.keys(IDX).filter(function (b) { return !qIsMac(b); }).concat(qCat ? Object.keys(qCat.f) : Object.keys(Q.names)); }
+  function qPool() { return Object.keys(IDX).filter(function (b) { return !qIsMac(b) && !IDX[b].hm; }).concat(qCat ? Object.keys(qCat.f) : Object.keys(Q.names)); }
   function qSearch(q) {
     var qn = qNorm(q), qu = qn.toUpperCase(), res = [];
     if (!qn) return res;
@@ -3028,10 +3035,11 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
       var I = IDX[b], tcId = cashTc(I);
       var day = function (s) { var p = String(s).split('-'); return Date.UTC(+p[0], +p[1] - 1, +p[2]); };
       var tcHist = function () {             // 텐센트 [날짜, 시가, 종가, 고가, 저가, 거래량]
-        var url = I.kl === 'fqkline' ? 'https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param=' + tcId + ',day,,,1000,'
-                                     : 'https://web.ifzq.gtimg.cn/appstock/app/kline/kline?param=' + tcId + ',day,,,1000';
+        var kid = I.tk || tcId;              // 미국 종목은 거래소까지 붙인 코드 (usAAPL.OQ)
+        var url = I.kl === 'fqkline' ? 'https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param=' + kid + ',day,,,1000,'
+                                     : 'https://web.ifzq.gtimg.cn/appstock/app/kline/kline?param=' + kid + ',day,,,1000';
         return fetch(url, { cache: 'no-store' }).then(dvJson).then(function (j) {
-          var dd = j && j.data, s = dd && (dd[tcId] || dd[tcId.replace(/^us/, 'us.')]), rows = (s && (s.day || s.qfqday)) || [];
+          var dd = j && j.data, s = dd && (dd[kid] || dd[tcId] || dd[tcId.replace(/^us/, 'us.')]), rows = (s && (s.day || s.qfqday)) || [];
           if (!rows.length) throw new Error('empty');
           return rows.map(function (x) { return { t: day(x[0]), o: +x[1], c: +x[2], h: +x[3], l: +x[4], v: +x[5] || 0 }; });
         });
@@ -3158,7 +3166,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   function dvSubText(b) {
     if (qIsCash(b)) {
       var now = Date.now(), I = IDX[b];
-      return I.sub + ' · ' + (I.ex || '') + ' 현물 지수 · ' + cashLong(cashStateB(b, now), now);
+      return I.sub + ' · ' + (I.ex || '') + (I.hm ? ' 주식 · ' : ' 현물 지수 · ') + cashLong(cashStateB(b, now), now);
     }
     if (qIsMac(b)) return IDX[b].sub + ' · 동방재부(Eastmoney) 공개 시세';
     if (IDX[b]) return IDX[b].sub.split(' · ')[0] + ' 무기한 선물 · ' + (IDX[b].src === 'hl' ? '하이퍼리퀴드' : '게이트');
@@ -3173,7 +3181,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     $('dvName').textContent = qName(b).n;
     $('dvSub').textContent = dvSubText(b);
     $('dvChgL').textContent = qIsCash(b) || qIsMac(b) ? '전일 대비' : '24시간 대비';
-    $('dvPx').innerHTML = c ? esc(dvFmt(c * k)) + (dvKrw() ? '<small>원</small>' : bp ? '<small>%</small>' : IDX[b] ? '' : '<small>달러</small>') : '—';
+    $('dvPx').innerHTML = c ? esc(dvFmt(c * k)) + (dvKrw() ? '<small>원</small>' : bp ? '<small>%</small>' : IDX[b] && !IDX[b].hm ? '' : '<small>달러</small>') : '—';
     var el = $('dvChg');
     if (q && q.o > 0 && c) {
       var pct = (c - q.o) / q.o * 100, cls = dvCls(pct);
@@ -4066,12 +4074,16 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   var HM_SN = HM.short || {};            // 짧은 이름 (좁은 칸·요약 목록)
   var HM_SC = { T: '기술', C: '커뮤니케이션', D: '경기소비재', S: '필수소비재', I: '산업재', H: '헬스케어', F: '금융', E: '에너지', M: '소재', U: '유틸리티', R: '부동산' };
   var HM_EMSEC = { '信息技术': 'T', '通讯服务': 'C', '非日常生活消费品': 'D', '日常消费品': 'S', '工业': 'I', '医疗保健': 'H', '金融': 'F', '能源': 'E', '原材料': 'M', '公用事业': 'U', '房地产': 'R' };
-  var HM_EM = '.eastmoney.com/api/qt/clist/get?pn=1&pz=100&po=1&np=1&fltt=2&invt=2&fid=f20&fs=m:105,m:106,m:107&fields=f2,f3,f4,f5,f6,f10,f12,f15,f16,f18,f20,f100,f124';
-  var HM_STEP = [0.3, 1, 2, 3];          // 색 단계 경계 (%)
+  var HM_EM = '.eastmoney.com/api/qt/clist/get?pn=1&pz=100&po=1&np=1&fltt=2&invt=2&fid=f20&fs=m:105,m:106,m:107&fields=f2,f3,f4,f5,f6,f10,f12,f13,f15,f16,f18,f20,f100,f124';
+  var HM_SUF = { 105: '.OQ', 106: '.N', 107: '.AM' };   // 동방재부 시장 번호(나스닥·뉴욕·NYSE American) → 텐센트 일봉 코드 끝 (usAAPL.OQ · usJPM.N)
+  // 기간: 색 단계 경계(%)는 기간이 길수록 넓게 · 기준일 = 7일 전 · 한 달 전 · 1년 전 (그날 또는 그 전 가장 가까운 종가, tol 일보다 멀면 없음)
+  var HM_PER = { '1d': { n: '1일', s: [0.3, 1, 2, 3] }, '1w': { n: '7일', s: [0.5, 2, 5, 10], days: 7, tol: 5 },
+                 '1m': { n: '1개월', s: [1, 4, 10, 20], mon: 1, tol: 7 }, '1y': { n: '1년', s: [3, 15, 40, 80], mon: 12, tol: 10 } };
   var HM_POW = 0.56;                     // 타일 넓이 = 시가총액^0.56 (작은 종목도 보이게 — 지수 기여·비중은 실제 시가총액으로)
   var hm = { on: false, m: store.get('hmMkt', 'kr'), v: store.get('hmView', 'map') === 'list' ? 'list' : 'map', data: {}, busy: {}, failAt: {},
              T: null, L: [], rows: [], st: null, pinK: '', fk: '', sec: '', sort: 'pct', asc: false, pushed: false, skipPop: false, back: null, raf: 0, size: '' };
   if (!HM_MK[hm.m]) hm.m = 'kr';
+  hm.per = HM_PER[store.get('hmPer', '1d')] ? store.get('hmPer', '1d') : '1d'; hm.pv = null; hm.bgAt = {};
   var hmUsSec = {}, hmUsSkip = {};
   (function () {
     var U = HM.us || {};
@@ -4123,8 +4135,9 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
         var t = String((x && x.f12) || '');
         if (!/^[A-Z][A-Z0-9_]{0,9}$/.test(t) || hmUsSkip[t] || x.f100 === '-') return;
         var sc = hmUsSec[t] || HM_EMSEC[x.f100] || '';
-        var r = hmRow({ k: t, n: hmUsName(t), sn: HM_SN[t] || '', sec: sc ? HM_SC[sc] : '기타', bn: t, en: '', p: +x.f2, pc: +x.f18, ch: +x.f4, pct: +x.f3, cap: +x.f20,
-                        vol: +x.f5, amt: +x.f6, vr: +x.f10, hi: +x.f15, lo: +x.f16, t: +x.f124 > 0 ? +x.f124 * 1000 : 0 });
+        var mk = +x.f13, r = hmRow({ k: t, n: hmUsName(t), sn: HM_SN[t] || '', sec: sc ? HM_SC[sc] : '기타', bn: t, en: '', p: +x.f2, pc: +x.f18, ch: +x.f4, pct: +x.f3, cap: +x.f20,
+                        vol: +x.f5, amt: +x.f6, vr: +x.f10, hi: +x.f15, lo: +x.f16, t: +x.f124 > 0 ? +x.f124 * 1000 : 0,
+                        mk: HM_SUF[mk] ? mk : 0, tk: HM_SUF[mk] ? 'us' + t.replace('_', '.') + HM_SUF[mk] : '', src: 'em' });
         if (r) rows.push(r);
       });
       if (rows.length < 20) throw new Error('empty');
@@ -4138,7 +4151,8 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
       L.forEach(function (x) {
         var f = o['us' + x[0].replace('_', '.')]; if (!f) return;
         var r = hmRow({ k: x[0], n: hmUsName(x[0]), sn: HM_SN[x[0]] || '', sec: HM_SC[x[1]], bn: x[0], en: f[46] || '', p: +f[3], pc: +f[4], ch: +f[31], pct: +f[32], cap: +f[45] * 1e8,
-                        vol: +f[6], amt: +f[37], vr: 0, hi: +f[33], lo: +f[34], t: tcTime(f[30], TZ.US) });
+                        vol: +f[6], amt: +f[37], vr: 0, hi: +f[33], lo: +f[34], t: tcTime(f[30], TZ.US),
+                        mk: 0, tk: /^[A-Z0-9.]+\.(OQ|N|AM)$/.test(f[2] || '') ? 'us' + f[2] : '', src: 'tc' });
         if (r) rows.push(r);
       });
       if (rows.length < 20) throw new Error('empty');
@@ -4157,6 +4171,11 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     if (hm.on && hm.m === m) hmMsg();
     (m === 'us' ? hmLoadUs() : hmLoadTc(m)).then(function (r) {
       hm.data[m] = { at: Date.now(), rows: r.rows, idx: r.idx || {} }; delete hm.failAt[m];
+      if (m !== 'us') hmRecord(m, r.rows, r.idx);                   // 한국·일본: 종가 쌓기 (기간 등락용)
+      else if (dv.b && IDX[dv.b] && IDX[dv.b].hm) {                 // 미국 종목 차트가 열려 있으면 그 값도 새로
+        var k = dv.b.slice(1), q = r.rows.filter(function (x) { return x.k === k; })[0];
+        if (q) cashSet(dv.b, q.src === 'em' ? 'em' : 'tc', q.p, q.pc, q.t, { hi: q.hi, lo: q.lo });
+      }
     }, function () { hm.failAt[m] = Date.now(); })
       .then(function () { hm.busy[m] = false; if (hm.on && hm.m === m) hmRender(); });
   }
@@ -4167,9 +4186,123 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     if (!d || now - d.at >= hmTtl(m)) hmLoad(m);
   }
 
+  /* 기간 등락 — 기준 종가: 미국 = 텐센트 일봉(종목마다, 기준일이 바뀌면 다시 · 이 기기에 저장)
+                          한국·일본 = 무료로 지난 가격을 받을 곳이 없어 이 기기에 매일 종가를 쌓음 (텐센트 시세의 전일 종가 + 장 끝난 뒤 값) */
+  function hmTarget(k, per) {            // 기준일 (한 달·1년 전 같은 날이 없으면 그 달 마지막 날)
+    var P = HM_PER[per], d = fromKey(k);
+    if (P.days) return toKey(addDays(d, -P.days));
+    return hmAddMon(k, -P.mon);
+  }
+  function hmAddMon(k, n) { var d = fromKey(k), y = d.getFullYear(), m = d.getMonth() + n; return toKey(new Date(y, m, Math.min(d.getDate(), new Date(y, m + 1, 0).getDate()))); }
+  function hmAvail(first, per) { var P = HM_PER[per]; return P.days ? addDayKey(first, P.days) : hmAddMon(first, P.mon); }   // 이 날부터 기간 등락이 나옴
+  function hmRefIn(ser, tg, tol) {       // ser = [[날짜, 종가] …] 오래된 것부터 → 기준일 또는 그 전 가장 가까운 것
+    for (var i = ser.length - 1; i >= 0; i--) {
+      if (ser[i][0] > tg) continue;
+      return (fromKey(tg) - fromKey(ser[i][0])) / 864e5 <= tol ? ser[i] : null;
+    }
+    return null;
+  }
+  var hmRefUs = (function () { var o = store.get('hmRefUs', null); return o && o.T && o.r && typeof o.r === 'object' ? { T: o.T, r: o.r, miss: {} } : null; })();
+  var hmRefJob = null;
+  function hmUsRefs(T, rows) {           // 미국: 기준일(T = 마지막 거래일)마다 7일·1개월·1년 전 종가 — 없는 종목만 4개씩 받음
+    if (!hmRefUs || hmRefUs.T !== T) { hmRefUs = { T: T, r: {}, miss: {} }; hmRefJob = null; }
+    var now = Date.now(), want = [];
+    rows.forEach(function (r) { if (r.tk && !hmRefUs.r[r.k] && !(now - (hmRefUs.miss[r.k] || 0) < 3e5)) want.push([r.k, r.tk]); });
+    HM_MK.us.idx.forEach(function (b) { var id = IDX[b] && cashTc(IDX[b]); if (id && !hmRefUs.r[b] && !(now - (hmRefUs.miss[b] || 0) < 3e5)) want.push([b, id]); });
+    if (!want.length || hmRefJob) return;
+    var job = hmRefJob = { n: want.length, done: 0 }, R = hmRefUs;
+    var one = function (x) {
+      return fetch('https://web.ifzq.gtimg.cn/appstock/app/kline/kline?param=' + encodeURIComponent(x[1]) + ',day,,,300', { cache: 'no-store' })
+        .then(dvJson).then(function (j) {
+          var dd = j && j.data, s = dd && (dd[x[1]] || dd[x[1].replace(/^us/, 'us.')]), a = (s && (s.day || s.qfqday)) || [];
+          var ser = a.map(function (y) { return [String(y[0]), +y[2]]; }).filter(function (y) { return /^\d{4}-\d\d-\d\d$/.test(y[0]) && y[1] > 0; });
+          if (!ser.length) throw new Error('empty');
+          var o = {};
+          ['1w', '1m', '1y'].forEach(function (p) { var q = hmRefIn(ser, hmTarget(R.T, p), HM_PER[p].tol); if (q) o[p] = q; });
+          R.r[x[0]] = o;
+        }).catch(function () { R.miss[x[0]] = Date.now(); })
+        .then(function () { job.done++; if (hm.on && hm.m === 'us' && hm.per !== '1d' && !(hm.pv && hm.pv.rows.length)) hmMsg(); });
+    };
+    var run = function () { var x = want.shift(); if (!x || hmRefJob !== job) return null; return one(x).then(run); };
+    Promise.all([run(), run(), run(), run()]).then(function () {
+      if (hmRefJob !== job) return;
+      hmRefJob = null;
+      store.set('hmRefUs', { T: R.T, r: R.r });
+      if (hm.on && hm.m === 'us' && hm.per !== '1d') hmRender();
+    });
+  }
+  var HMH = { kr: 'hmHistKr', jp: 'hmHistJp' };
+  function hmHist(m) { var h = store.get(HMH[m], null); return h && h.d && typeof h.d === 'object' ? h : { d: {} }; }   // { d: { 'YYYY-MM-DD': { 코드: 종가 } } }
+  function hmPrevDay(c, k) {             // 그 전 거래일 (주말·휴장 건너뜀)
+    for (var i = 1; i <= 15; i++) { var p = addDayKey(k, i * -1); if (sessionOf(c, p)) return p; }
+    return '';
+  }
+  function hmRecord(m, rows, idx) {      // 전일 종가 → 그 전 거래일, 장이 끝난 뒤의 값 → 그날 (다음 날 전일 종가로 다시 맞춰짐)
+    var c = HM_MK[m].c, today = localKey(c, Date.now()), h = hmHist(m), n = 0;
+    var put = function (dk, code, v) { if (!dk || !(v > 0)) return; var o = h.d[dk] || (h.d[dk] = {}); if (o[code] !== v) { o[code] = v; n++; } };
+    var add = function (code, p, pc, t) {
+      if (!(t > 0)) return;
+      var dk = localKey(c, t), ss = sessionOf(c, dk);
+      put(hmPrevDay(c, dk), code, pc);
+      if (ss && t >= instantAt(TZ[c], dk, ss.close) - 6e4) put(dk, code, p);
+    };
+    rows.forEach(function (r) { add(r.k, r.p, r.pc, r.t); });
+    Object.keys(idx || {}).forEach(function (b) { var x = idx[b]; if (x && x.c > 0 && isFinite(x.pct)) add(b, x.c, x.c / (1 + x.pct / 100), x.t); });
+    if (!n) return;
+    var cut = addDayKey(today, -400);
+    Object.keys(h.d).forEach(function (k) { if (k < cut) delete h.d[k]; });
+    store.set(HMH[m], h);
+  }
+  function hmBg() {                      // 히트맵을 안 열어도 한국·일본 종가를 쌓음 — 하루 한두 번 (그 전 거래일 종가 · 장 마감 40분 뒤 그날 종가)
+    ['kr', 'jp'].forEach(function (m) {
+      var c = HM_MK[m].c, now = Date.now(), today = localKey(c, now), ss = sessionOf(c, today), want = hmPrevDay(c, today), h;
+      if (ss && now > instantAt(TZ[c], today, ss.close) + 40 * 6e4) want = today;
+      h = hmHist(m);
+      if (h.d[want] && Object.keys(h.d[want]).length >= (HM[m] || []).length * 0.8) return;
+      if (hm.busy[m] || now - (hm.bgAt[m] || 0) < 30 * 6e4) return;
+      hm.bgAt[m] = now;
+      hmLoadTc(m).then(function (r) { hmRecord(m, r.rows, r.idx); if (!hm.data[m] || hm.data[m].at < now) hm.data[m] = { at: now, rows: r.rows, idx: r.idx || {} }; }, function () {});
+    });
+  }
+  setTimeout(hmBg, 20000); setInterval(hmBg, 15 * 6e4);
+  function hmPerView(m, d) {             // 기간 등락률을 붙인 목록 (오늘 등락은 pct1·ch1) — 기준 종가가 없는 종목은 빼고 셈
+    var base = d ? d.rows : [], out = { rows: [], miss: 0, T: '', refDay: '', first: '', idxRef: function () { return null; } };
+    base.forEach(function (r) { r.pct1 = r.pct; r.ch1 = r.ch; });
+    if (hm.per === '1d' || !base.length) { out.rows = base; return out; }
+    var c = HM_MK[m].c, tmax = 0, refOf;
+    base.forEach(function (r) { if (r.t > tmax) tmax = r.t; });
+    var T = out.T = localKey(c, tmax || Date.now());
+    if (m === 'us') {
+      hmUsRefs(T, base);
+      refOf = function (k) { var o = hmRefUs && hmRefUs.T === T && hmRefUs.r[k]; return (o && o[hm.per]) || null; };
+    } else {
+      var h = hmHist(m), keys = Object.keys(h.d).sort(), tg = hmTarget(T, hm.per), tol = HM_PER[hm.per].tol;
+      out.first = keys[0] || '';
+      refOf = function (k) {
+        for (var i = keys.length - 1; i >= 0; i--) {
+          if (keys[i] > tg) continue;
+          if ((fromKey(tg) - fromKey(keys[i])) / 864e5 > tol) return null;
+          var v = h.d[keys[i]][k]; if (v > 0) return [keys[i], v];
+        }
+        return null;
+      };
+    }
+    var cnt = {};
+    base.forEach(function (r) {
+      var q = refOf(r.k); if (!q) { out.miss++; return; }
+      var o = {}; for (var x in r) o[x] = r[x];
+      o.ref = q; o.pct = (r.p / q[1] - 1) * 100; o.ch = r.p - q[1];
+      out.rows.push(o); cnt[q[0]] = (cnt[q[0]] || 0) + 1;
+    });
+    out.refDay = Object.keys(cnt).sort(function (a, b) { return cnt[b] - cnt[a]; })[0] || '';
+    out.idxRef = refOf;
+    return out;
+  }
+  function hmPn() { return hm.per === '1d' ? '' : HM_PER[hm.per].n + ' '; }    // '7일 ' · '1개월 ' …
+
   /* 숫자 글자 */
-  function hmCls(p) {                    // n(±0.3% 안) · u1~u4 오름 · d1~d4 내림
-    var a = Math.abs(p), i = a < HM_STEP[0] ? 0 : a < HM_STEP[1] ? 1 : a < HM_STEP[2] ? 2 : a < HM_STEP[3] ? 3 : 4;
+  function hmCls(p) {                    // n(보합) · u1~u4 오름 · d1~d4 내림 — 경계는 기간마다 (1일 ±0.3/1/2/3%)
+    var S = HM_PER[hm.per].s, a = Math.abs(p), i = a < S[0] ? 0 : a < S[1] ? 1 : a < S[2] ? 2 : a < S[3] ? 3 : 4;
     return i ? (p > 0 ? 'u' : 'd') + i : 'n';
   }
   function hmPct(v) { return pctTxt(v, dvCls(v)); }
@@ -4298,9 +4431,11 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     tl.innerHTML = h;
     tl.classList.toggle('dim', !!hm.sec);
   }
-  var HM_COLS = [['n', '종목'], ['sec', '업종', 1], ['pct', '등락률'], ['p', '현재가'], ['ctb', '지수 기여'], ['amt', '거래대금'], ['vr', '거래량 배수', 1], ['cap', '시가총액', 1]];
+  var HM_COLS = [['n', '종목'], ['sec', '업종', 1], ['pct', '등락률'], ['pct1', '오늘', 1], ['p', '현재가'], ['ctb', '지수 기여'], ['amt', '거래대금'], ['vr', '거래량 배수', 1], ['cap', '시가총액', 1]];
   function hmTableDraw() {
-    var m = hm.m, k = hm.sort, rows = hm.rows.slice(), cols = HM_COLS.filter(function (c) { return c[0] !== 'vr' || m === 'us'; });
+    var m = hm.m, k = hm.sort, rows = hm.rows.slice(), per = hm.per !== '1d';
+    var cols = HM_COLS.filter(function (c) { return (c[0] !== 'vr' || m === 'us') && (c[0] !== 'pct1' || per); })
+      .map(function (c) { return c[0] === 'pct' && per ? ['pct', hmPn() + '등락률'] : c[0] === 'amt' && per ? ['amt', '거래대금 (오늘)'] : c; });
     rows.sort(function (a, b) {
       var p = a[k], q = b[k], c = typeof p === 'string' ? p.localeCompare(q, 'ko') : p - q;
       return (hm.asc ? c : -c) || b.cap - a.cap;
@@ -4310,7 +4445,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     }).join('') + '</tr></thead><tbody>';
     rows.forEach(function (r) {
       h += '<tr data-k="' + esc(r.k) + '"' + (r.k === hm.pinK ? ' class="sel"' : '') + '><td><b>' + esc(r.n) + '</b><small>' + esc(r.k.replace('_', '.')) + '</small></td>' +
-        '<td class="sec ext">' + esc(r.sec) + '</td><td class="' + dvCls(r.pct) + '"><b>' + hmPct(r.pct) + '</b></td><td>' + hmPxN(m, r.p) + '</td>' +
+        '<td class="sec ext">' + esc(r.sec) + '</td><td class="' + dvCls(r.pct) + '"><b>' + hmPct(r.pct) + '</b></td>' + (per ? '<td class="ext ' + dvCls(r.pct1) + '">' + hmPct(r.pct1) + '</td>' : '') + '<td>' + hmPxN(m, r.p) + '</td>' +
         '<td class="' + dvCls(r.ctb) + '">' + hmPp(r.ctb) + '</td><td>' + (r.amt > 0 ? (r.est ? '약 ' : '') + hmWon(m, r.amt) : '—') + '</td>' +
         (m === 'us' ? '<td class="ext">' + (r.vr > 0 ? r.vr.toFixed(2) + '배' : '—') + '</td>' : '') + '<td class="ext">' + hmWon(m, r.cap) + '</td></tr>';
     });
@@ -4325,7 +4460,8 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   function hmSideHtml(m, rows, st) {
     var h = '', secs = st.secs.slice().sort(function (a, b) { return b.pct - a.pct; });
     var mx = Math.max(0.5, Math.max.apply(null, secs.map(function (s) { return Math.abs(s.pct); })));
-    h += '<section class="hm-sec"><h3>업종별 <small>시총 가중 · 누르면 강조</small></h3>';
+    var pn = hmPn();
+    h += '<section class="hm-sec"><h3>업종별' + (pn ? ' ' + pn + '등락' : '') + ' <small>시총 가중 · 누르면 강조</small></h3>';
     secs.forEach(function (s) {
       var c = dvCls(s.pct);
       h += '<button class="hm-sb' + (hm.sec === s.s ? ' on' : '') + '" data-s="' + esc(s.s) + '" title="' + esc(s.s + ' · ' + s.rows.length + '종목') + '"><span class="nm">' + esc(s.s) + '</span>' +
@@ -4335,18 +4471,18 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     var pctV = function (r) { return '<span class="v ' + dvCls(r.pct) + '">' + hmPct(r.pct) + '</span>'; };
     var byC = rows.slice().sort(function (a, b) { return b.ctb - a.ctb; });
     var ctbV = function (r) { return '<span class="v ' + dvCls(r.ctb) + '">' + hmPp(r.ctb) + '</span>'; };
-    h += '<section class="hm-sec"><h3>지수 영향 <small>비중 × 등락률</small></h3><div class="hm-two"><div><h4>끌어올림</h4>' +
+    h += '<section class="hm-sec"><h3>지수 영향 <small>비중 × ' + pn + '등락률</small></h3><div class="hm-two"><div><h4>끌어올림</h4>' +
       hmItems(byC.filter(function (r) { return r.ctb > 0; }).slice(0, 3), ctbV) + '</div><div><h4>끌어내림</h4>' +
       hmItems(byC.filter(function (r) { return r.ctb < 0; }).reverse().slice(0, 3), ctbV) + '</div></div></section>';
     var byP = rows.slice().sort(function (a, b) { return b.pct - a.pct; });
-    h += '<section class="hm-sec"><h3>급등 · 급락</h3><div class="hm-two"><div><h4>오른 종목</h4>' +
+    h += '<section class="hm-sec"><h3>' + pn + '급등 · 급락</h3><div class="hm-two"><div><h4>오른 종목</h4>' +
       hmItems(byP.filter(function (r) { return r.pct > 0; }).slice(0, 3), pctV) + '</div><div><h4>내린 종목</h4>' +
       hmItems(byP.filter(function (r) { return r.pct < 0; }).reverse().slice(0, 3), pctV) + '</div></div></section>';
-    var amtV = function (r) { return '<span class="v">' + (r.est ? '약 ' : '') + hmWon(m, r.amt) + '<small class="' + dvCls(r.pct) + '">' + hmPct(r.pct) + '</small></span>'; };
-    h += '<section class="hm-sec"><h3>거래대금 상위' + (m === 'us' ? '' : ' <small>거래량 × 현재가 어림</small>') + '</h3>' +
+    var amtV = function (r) { return '<span class="v">' + (r.est ? '약 ' : '') + hmWon(m, r.amt) + '<small class="' + dvCls(r.pct1) + '">' + hmPct(r.pct1) + '</small></span>'; };
+    h += '<section class="hm-sec"><h3>거래대금 상위' + (pn ? ' 오늘' : '') + (m === 'us' ? '' : ' <small>거래량 × 현재가 어림</small>') + '</h3>' +
       hmItems(rows.filter(function (r) { return r.amt > 0; }).sort(function (a, b) { return b.amt - a.amt; }).slice(0, 5), amtV) + '</section>';
     if (m === 'us' && rows.some(function (r) { return r.vr > 0; })) {
-      var vrV = function (r) { return '<span class="v">' + r.vr.toFixed(1) + '배<small class="' + dvCls(r.pct) + '">' + hmPct(r.pct) + '</small></span>'; };
+      var vrV = function (r) { return '<span class="v">' + r.vr.toFixed(1) + '배<small class="' + dvCls(r.pct1) + '">' + hmPct(r.pct1) + '</small></span>'; };
       h += '<section class="hm-sec"><h3>거래량 급증 <small>평소 같은 시각의 1.5배 이상</small></h3>' +
         hmItems(rows.filter(function (r) { return r.vr >= 1.5; }).sort(function (a, b) { return b.vr - a.vr; }).slice(0, 5), vrV) + '</section>';
     }
@@ -4354,15 +4490,18 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   }
   function hmSumHtml(m, d, st, rows) {
     var now = Date.now(), lab = cashLabel(cashState(HM_MK[m].c, now), now), h = '<span class="hm-st ' + lab[0] + '"><i></i>' + esc(lab[1]) + '</span>';
+    var pv = hm.pv, pn = hmPn();
     HM_MK[m].idx.forEach(function (b) {
       var x = d && d.idx[b], q = qData[b];
       if (!x && q && q.c > 0 && q.o > 0) x = { c: q.c, pct: (q.c - q.o) / q.o * 100 };
       if (!x || !IDX[b]) return;
-      h += '<button class="hm-ix" data-b="' + esc(b) + '" title="' + esc(IDX[b].n + ' — 누르면 차트') + '"><span>' + esc(IDX[b].n) + '</span><b>' + fmtN(x.c, 2) + '</b><span class="' + dvCls(x.pct) + '">' + hmPct(x.pct) + '</span></button>';
+      var rf = pn && pv ? pv.idxRef(b) : null, v = pn ? (rf ? (x.c / rf[1] - 1) * 100 : null) : x.pct;
+      h += '<button class="hm-ix" data-b="' + esc(b) + '" title="' + esc(IDX[b].n + (pn ? ' — ' + pn + '등락' + (rf ? ' (' + mdw(rf[0]) + ' 종가 대비)' : ' 자료 없음') : '') + ' — 누르면 차트') + '"><span>' + esc(IDX[b].n) + '</span><b>' + fmtN(x.c, 2) + '</b>' +
+        (v == null ? '<span class="flat">' + pn + '—</span>' : '<span class="' + dvCls(v) + '">' + (pn ? pn : '') + hmPct(v) + '</span>') + '</button>';
     });
     if (st) {
       var n = rows.length, wd = function (c) { return (c / n * 100).toFixed(1) + '%'; };
-      h += '<span class="hm-avg" title="표시한 ' + n + '종목을 시가총액 비중으로 평균한 등락률">대표 ' + n + '종목 <b class="' + dvCls(st.avg) + '">' + hmPct(st.avg) + '</b></span>' +
+      h += '<span class="hm-avg" title="표시한 ' + n + '종목을 시가총액 비중으로 평균한 ' + pn + '등락률">대표 ' + n + '종목 ' + pn + '<b class="' + dvCls(st.avg) + '">' + hmPct(st.avg) + '</b></span>' +
         '<span class="hm-br" title="오른 종목 ' + st.up + ' · 그대로 ' + st.fl + ' · 내린 종목 ' + st.dn + '"><span class="up">▲' + st.up + '</span><span class="hm-brbar">' +
         (st.up ? '<i class="u" style="width:' + wd(st.up) + '"></i>' : '') + (st.fl ? '<i class="f" style="width:' + wd(st.fl) + '"></i>' : '') + (st.dn ? '<i class="d" style="width:' + wd(st.dn) + '"></i>' : '') +
         '</span><span class="dn">▼' + st.dn + '</span></span>';
@@ -4373,18 +4512,33 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
       }
       if (st.t || fail) h += '<span class="hm-tm' + (fail || lag ? ' warn' : '') + '" title="무료 공개 시세라 늦을 수 있음 (지수는 거의 실시간)">' + (fail ? '업데이트 실패 · 잠시 뒤 다시 · ' : '') +
         (st.t ? kstShort(st.t, now) + ' 기준' : '') + lag + '</span>';
+      if (pn && pv && pv.refDay) h += '<span class="hm-tm" title="기준일 = ' + pn + '전 그날 또는 그 전 가장 가까운 거래일 종가 · 배당·액면분할은 반영 안 됨">' + pn + '= ' + mdw(pv.refDay) + ' 종가 대비' +
+        (pv.miss ? ' · 기준가 없는 ' + pv.miss + '종목 뺌' : '') + '</span>';
     }
     return h;
   }
   function hmMsg() {
-    var el = $('hmMsg'), m = hm.m, d = hm.data[m];
-    if (d && d.rows.length) { el.hidden = true; return; }
+    var el = $('hmMsg'), m = hm.m, d = hm.data[m], pv = hm.pv;
+    if (d && d.rows.length && (hm.per === '1d' || (pv && pv.rows.length))) { el.hidden = true; return; }
     el.hidden = false;
+    if (d && d.rows.length) {              // 기간 자료가 아직 없음
+      var P = HM_PER[hm.per], first = pv && pv.first;
+      if (m === 'us') el.innerHTML = '<span>미국 ' + P.n + ' 등락 자료 받는 중' + (hmRefJob ? ' ' + hmRefJob.done + '/' + hmRefJob.n : '') + '…' +
+        (hmRefJob ? '' : '<span class="sub">받지 못한 종목은 잠시 뒤 다시 받습니다</span>') + '</span><button data-act="per1d">1일로 보기</button>';
+      else el.innerHTML = '<span>' + HM_MK[m].n + ' ' + P.n + ' 등락은 이 기기에 매일 종가를 쌓아서 보여 줍니다' +
+        '<span class="sub">' + (first ? (+first.slice(0, 4) !== new Date().getFullYear() ? first.slice(0, 4) + '년 ' : '') + mdw(first) + ' 종가부터 저장 중 · ' + hmYmd(hmAvail(first, hm.per)) + '부터 보임'
+                                       : '오늘부터 저장합니다 (히트맵을 안 열어도 켜져 있는 동안 저장)') + ' · 무료로 지난 가격을 받을 곳이 없어서</span></span><button data-act="per1d">1일로 보기</button>';
+      return;
+    }
     el.innerHTML = hm.busy[m] || !hm.failAt[m] ? '<span>' + HM_MK[m].n + ' 시세 불러오는 중…</span>'
       : '<span>' + HM_MK[m].n + ' 시세를 받지 못했습니다. 인터넷 연결을 확인해 주세요.</span><button data-act="retry">다시 시도</button>';
   }
+  function hmYmd(k) { return (+k.slice(0, 4) !== new Date().getFullYear() ? k.slice(0, 4) + '년 ' : '') + mdw(k); }
   function hmPaintTabs() {
     var now = Date.now();
+    $('hmPr').querySelectorAll('button[data-p]').forEach(function (b) {
+      var on = b.getAttribute('data-p') === hm.per; b.classList.toggle('on', on); b.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
     $('hmMk').querySelectorAll('button[data-m]').forEach(function (b) {
       var k = b.getAttribute('data-m'), on = k === hm.m, s = cashState(HM_MK[k].c, now).st, lv = b.querySelector('.lv');
       b.classList.toggle('on', on); b.setAttribute('aria-selected', on ? 'true' : 'false');
@@ -4399,7 +4553,8 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   function hmRender() {
     if (!hm.on) return;
     var m = hm.m, d = hm.data[m];
-    hm.rows = d ? d.rows : []; hm.st = hm.rows.length ? hmStats(hm.rows) : null;
+    hm.pv = hmPerView(m, d);
+    hm.rows = hm.pv.rows; hm.st = hm.rows.length ? hmStats(hm.rows) : null;
     if (hm.sec && !(hm.st && hm.st.secs.some(function (s) { return s.s === hm.sec; }))) hm.sec = '';
     hmPaintTabs();
     $('hmSum').innerHTML = hmSumHtml(m, d, hm.st, hm.rows);
@@ -4414,19 +4569,36 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     return null;
   }
 
-  /* 말풍선: 마우스를 올리면 따라다님 · 누르면(손가락은 톡) 고정 + 24시간 차트 버튼 */
+  /* 말풍선: 마우스를 올리면 따라다님 · 누르면(손가락은 톡) 고정 + 차트 단추 · 칸을 두 번 누르면 바로 차트 */
   function hmChartSym(r) { var b = r.bn, t = b ? qType(b) : ''; return t === 'EQUITY' || t === 'KR_EQUITY' ? b : ''; }
+  function hmChartB(r) {                 // 차트 기호 — 미국: 앱 안 차트(동방재부·텐센트 일봉·분봉), 한국·일본: 바이낸스 24시간 선물이 있는 종목만
+    if (hm.m !== 'us') return hmChartSym(r);
+    if (!r.mk && !r.tk) return '';
+    var b = '$' + r.k;
+    if (!IDX[b]) IDX[b] = { n: r.n, sub: r.k.replace('_', '.'), ex: { 105: '나스닥', 106: '뉴욕증권거래소', 107: 'NYSE American' }[r.mk] || '미국', src: 'cash',
+                           tc: 'us' + r.k.replace('_', '.'), em: r.mk ? r.mk + '.' + r.k : '', tk: r.tk || '', mkt: 'US', dg: 2, kl: 'kline', hm: 1 };
+    return b;
+  }
+  function hmChart(r) {
+    var b = hmChartB(r);
+    if (!b) { hm.fk = r.k; hmPin(r.k); return; }      // 차트 자료 없음 → 고정 말풍선에 이유
+    if (IDX[b] && IDX[b].hm) cashSet(b, r.src === 'em' ? 'em' : 'tc', r.p, r.pc, r.t, { hi: r.hi, lo: r.lo });
+    $('hmTip').hidden = true;
+    dvOpen(b);
+  }
   function hmTipFill(r, pin) {
     var m = hm.m, tip = $('hmTip'), now = Date.now();
     tip.textContent = '';
     var el = function (tag, cls, txt, par) { var e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; (par || tip).appendChild(e); return e; };
     var t1 = el('div', 't1'); el('b', '', r.n, t1); el('small', '', r.k.replace('_', '.') + ' · ' + r.sec, t1);
     if (r.en) el('div', 'en', r.en);
-    var px = el('div', 'px'); el('b', '', hmPx(m, r.p), px); el('span', dvCls(r.pct), hmChg(m, r.ch, r.p) + ' (' + hmPct(r.pct) + ')', px);
-    var dl = el('dl'), row = function (k, v, cls) { el('dt', '', k, dl); el('dd', cls || '', v, dl); };
+    var p1 = r.pct1 != null ? r.pct1 : r.pct, c1 = r.ch1 != null ? r.ch1 : r.ch, pn = hmPn();
+    var px = el('div', 'px'); el('b', '', hmPx(m, r.p), px); el('span', dvCls(p1), hmChg(m, c1, r.p) + ' (' + hmPct(p1) + ')' + (pn ? ' 오늘' : ''), px);
+    var dl = el('dl'), row = function (k, v, cls) { el('dt', '', k, dl); return el('dd', cls || '', v, dl); };
+    if (pn && r.ref) { var dd = row(pn + '등락', hmPct(r.pct), dvCls(r.pct)); el('small', '', mdw(r.ref[0]) + ' 종가 ' + hmPxN(m, r.ref[1], r.p), dd); }
     row('시가총액', hmWon(m, r.cap) + (m !== 'kr' && hmRate(m) ? ' (' + hmMoney(m, r.cap) + ')' : ''));
     row('표시 종목 중 비중', (r.w * 100).toFixed(1) + '%');
-    row('지수 기여', hmPp(r.ctb), dvCls(r.ctb));
+    row(pn ? '기여 (비중 × ' + pn.trim() + ')' : '지수 기여', hmPp(r.ctb), dvCls(r.ctb));
     if (r.amt > 0) row('거래대금', (r.est ? '약 ' : '') + hmWon(m, r.amt));
     if (r.vr > 0) row('거래량', '평소 같은 시각의 ' + r.vr.toFixed(2) + '배', r.vr >= 1.5 ? 'up' : '');
     if (r.hi > 0) {
@@ -4436,9 +4608,11 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
       var lg = el('div', 'hm-rgl'); el('span', '', '저가 ' + hmPxN(m, r.lo, r.p), lg); el('span', '', '고가 ' + hmPxN(m, r.hi, r.p), lg);
     }
     if (r.t) el('div', 'tm', kstShort(r.t, now) + ' 기준 (한국 시각)');
+    var cb = hm.m === 'us' ? (r.mk || r.tk ? 'us' : '') : hmChartSym(r);
+    if (!pin && cb) el('div', 'hint', '두 번 클릭하면 차트');
     if (pin) {
-      var sym = hmChartSym(r);
-      if (sym) { var acts = el('div', 'acts'), bt = el('button', '', '24시간 차트', acts); bt.setAttribute('data-act', 'chart'); bt.setAttribute('data-b', sym); }
+      if (cb) { var acts = el('div', 'acts'), bt = el('button', '', cb === 'us' ? '차트' : '24시간 차트', acts); bt.setAttribute('data-act', 'chart'); }
+      else el('div', 'note', '이 종목은 차트 자료가 없습니다 — 한국·일본 개별 종목 일봉은 무료로 받을 곳이 없어, 바이낸스 24시간 선물이 있는 종목(삼성전자·SK하이닉스·현대차 등)만 차트가 열립니다.');
       var x = el('button', 'x'); x.setAttribute('data-act', 'x'); x.setAttribute('aria-label', '닫기'); x.title = '닫기';
       x.innerHTML = '<svg viewBox="0 0 24 24"><path d="M7 7l10 10M17 7L7 17"/></svg>';
     }
@@ -4536,30 +4710,42 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   }
   function hmEsc() { if (hm.pinK) hmUnpin(); else if (hm.sec) hmSetSec(hm.sec); else hmClose(); }
 
-  (function () {                         // 범례: 9칸 + 경계 눈금
-    var C = ['d4', 'd3', 'd2', 'd1', 'n', 'u1', 'u2', 'u3', 'u4'];
-    var T = ['−3% 이하', '−3 ~ −2%', '−2 ~ −1%', '−1 ~ −0.3%', '−0.3 ~ +0.3% (보합)', '+0.3 ~ +1%', '+1 ~ +2%', '+2 ~ +3%', '+3% 이상'];
-    var h = '<b>등락률</b><span class="hm-sw"><div>' + C.map(function (c, i) { return '<i style="background:var(--hm-' + c + ')" title="' + T[i] + '"></i>'; }).join('') + '</div>';
-    [['−3%', 1], ['−2', 2], ['−1', 3], ['0', 4.5], ['+1', 6], ['+2', 7], ['+3%', 8]].forEach(function (t) {
+  function hmLegend() {                  // 범례: 9칸 + 경계 눈금 (기간마다 경계가 다름)
+    var s = HM_PER[hm.per].s, C = ['d4', 'd3', 'd2', 'd1', 'n', 'u1', 'u2', 'u3', 'u4'];
+    var T = ['−' + s[3] + '% 이하', '−' + s[3] + ' ~ −' + s[2] + '%', '−' + s[2] + ' ~ −' + s[1] + '%', '−' + s[1] + ' ~ −' + s[0] + '%', '−' + s[0] + ' ~ +' + s[0] + '% (보합)',
+             '+' + s[0] + ' ~ +' + s[1] + '%', '+' + s[1] + ' ~ +' + s[2] + '%', '+' + s[2] + ' ~ +' + s[3] + '%', '+' + s[3] + '% 이상'];
+    var h = '<b>' + hmPn() + '등락률</b><span class="hm-sw"><div>' + C.map(function (c, i) { return '<i style="background:var(--hm-' + c + ')" title="' + T[i] + '"></i>'; }).join('') + '</div>';
+    [['−' + s[3] + '%', 1], ['−' + s[2], 2], ['−' + s[1], 3], ['0', 4.5], ['+' + s[1], 6], ['+' + s[2], 7], ['+' + s[3] + '%', 8]].forEach(function (t) {
       h += '<span style="left:calc((100% - 16px) * ' + t[1] / 9 + ' + ' + (t[1] - 0.5) * 2 + 'px)">' + t[0] + '</span>';
     });
     $('hmLeg').innerHTML = h + '</span>';
-    $('hmSrc').textContent = '자료: 텐센트 증권(한국·일본·지수) · 동방재부(미국) · 무료 공개 시세라 늦을 수 있음 (한국·일본 종목은 보통 약 20분 — 늦으면 위에 표시, 지수는 거의 실시간) · 대표 종목만 · 금액은 원화 환산(환율 카드와 같은 환율) · 칸 크기는 작은 종목도 보이게 시가총액을 완만하게 줄여 그림';
+  }
+  function hmSetPer(p) {
+    if (!HM_PER[p] || p === hm.per) return;
+    hm.per = p; store.set('hmPer', p); hmUnpin(); hmLegend(); hmRender();
+  }
+  (function () {
+    hmLegend();
+    $('hmSrc').textContent = '자료: 텐센트 증권(한국·일본·지수) · 동방재부(미국) · 무료 공개 시세라 늦을 수 있음 (한국·일본 종목은 보통 약 20분 — 늦으면 위에 표시, 지수는 거의 실시간) · 대표 종목만 · 금액은 원화 환산(환율 카드와 같은 환율) · 칸 크기는 작은 종목도 보이게 시가총액을 완만하게 줄여 그림 · 7일·1개월·1년 = 그날(없으면 그 전 거래일) 종가 대비 — 미국은 텐센트 일봉, 한국·일본은 이 기기에 매일 쌓은 종가 (배당·액면분할 미반영) · 칸을 두 번 누르면 차트';
   })();
   $('hmBtn').onclick = hmOpen;
   $('hmBtnQ').onclick = hmOpen;
   $('hmClose').onclick = function () { hmClose(); };
   $('hmMk').addEventListener('click', function (e) { var b = e.target.closest('button[data-m]'); if (b) hmSetMkt(b.getAttribute('data-m')); });
   $('hmVw').addEventListener('click', function (e) { var b = e.target.closest('button[data-v]'); if (b) hmSetView(b.getAttribute('data-v')); });
+  $('hmPr').addEventListener('click', function (e) { var b = e.target.closest('button[data-p]'); if (b) hmSetPer(b.getAttribute('data-p')); });
   $('hmSum').addEventListener('click', function (e) { var b = e.target.closest('.hm-ix[data-b]'); if (b) dvOpen(b.getAttribute('data-b')); });
   $('hmSide').addEventListener('click', function (e) {
     var s = e.target.closest('.hm-sb[data-s]'); if (s) { hmSetSec(s.getAttribute('data-s')); return; }
     var it = e.target.closest('.hm-it[data-k]'); if (it) hmFocusKey(it.getAttribute('data-k'));
   });
-  $('hmMsg').addEventListener('click', function (e) { if (e.target.closest('[data-act="retry"]')) { delete hm.failAt[hm.m]; hmLoad(hm.m); } });
+  $('hmMsg').addEventListener('click', function (e) {
+    if (e.target.closest('[data-act="retry"]')) { delete hm.failAt[hm.m]; hmLoad(hm.m); }
+    else if (e.target.closest('[data-act="per1d"]')) hmSetPer('1d');
+  });
   $('hmTip').addEventListener('click', function (e) {
     var b = e.target.closest('button[data-act]'); if (!b) return;
-    if (b.getAttribute('data-act') === 'chart') dvOpen(b.getAttribute('data-b'));
+    if (b.getAttribute('data-act') === 'chart') { var r = hmFind(hm.pinK); if (r) hmChart(r); }
     else hmUnpin();
   });
   $('hmTbl').addEventListener('click', function (e) {
@@ -4571,6 +4757,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     }
     var tr = e.target.closest('tr[data-k]'); if (tr) hmFocusKey(tr.getAttribute('data-k'));
   });
+  $('hmTbl').addEventListener('dblclick', function (e) { var tr = e.target.closest('tr[data-k]'), r = tr && hmFind(tr.getAttribute('data-k')); if (r) hmChart(r); });
   (function () {                         // 지도: 마우스 올리기 · 누르기 · 키보드(화살표로 옆 칸, Enter 고정)
     var tl = $('hmTiles'), last = null;
     tl.addEventListener('pointermove', function (e) {
@@ -4587,6 +4774,10 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
       hm.fk = r.r.k;
       if (hm.pinK === r.r.k) { hmUnpin(); if (e.pointerType !== 'touch') hmHover(+t.getAttribute('data-i'), e.clientX, e.clientY); }
       else hmPin(r.r.k);
+    });
+    tl.addEventListener('dblclick', function (e) {           // 두 번 누르면 차트 (한국·일본은 24시간 선물이 있는 종목만)
+      var t = e.target.closest('.hm-t'), c = t && hm.L[+t.getAttribute('data-i')];
+      if (c) { e.preventDefault(); hmChart(c.r); }
     });
     tl.addEventListener('focusin', function (e) {
       var t = e.target.closest('.hm-t'); if (!t || hm.pinK) return;
@@ -4622,7 +4813,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
       }).observe($('hmMap'));
     } catch (e) {}
   })();
-  document.addEventListener('visibilitychange', function () { if (!document.hidden) hmTick(); });
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) { hmTick(); hmBg(); } });
 
   /* ── 본문 너비에 따라 세로형/가로형 ── */
   var mview = store.get('mview', 'cal');     // 휴대폰 화면: 'cal' 달력 / 'q' 시세
