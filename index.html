@@ -45,6 +45,11 @@
   --kr: #b32130; --cn: #a5720f; --jp: #7a4b9a; --us: #2e81cc;
   --on-chip: #ffffff;
   --shadow: 0 8px 28px rgba(15, 18, 25, .14), 0 1px 3px rgba(15, 18, 25, .08);
+  /* 오름(빨강)·내림(파랑): 시세 글자 q · 차트 c(+이동평균) · 히트맵 9단계 hm (밝기 단계 고르게, 글자 대비 4.5 이상) */
+  --q-up: #d4333b; --q-dn: #2d6fd6;
+  --c-up: #d4333b; --c-dn: #2d6fd6; --c-ma1: #e07a10; --c-ma2: #139a8f;
+  --hm-n: #e4e6ea; --hm-u1: #f8d3d4; --hm-u2: #e9888d; --hm-u3: #d33a43; --hm-u4: #a91b25;
+  --hm-d1: #d3e1f7; --hm-d2: #87adeb; --hm-d3: #3a73d1; --hm-d4: #1a4c9f; --hm-ink: #15171c;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -57,6 +62,10 @@
     --kr: #e15055; --cn: #cc8d16; --jp: #ad6db7; --us: #50a0ee;
     --on-chip: #121316;
     --shadow: 0 10px 30px rgba(0, 0, 0, .5), 0 1px 3px rgba(0, 0, 0, .4);
+    --q-up: #ff6b6b; --q-dn: #72a6ff;
+    --c-up: #ef5b60; --c-dn: #4f8ff0; --c-ma1: #9a6c12; --c-ma2: #2fa39c;
+    --hm-n: #2c2e34; --hm-u1: #502b31; --hm-u2: #72303a; --hm-u3: #a1343f; --hm-u4: #c93a45;
+    --hm-d1: #253350; --hm-d2: #284777; --hm-d3: #2b5dab; --hm-d4: #3270d2; --hm-ink: #eceef2;
   }
 }
 :root[data-theme="dark"] {
@@ -69,6 +78,10 @@
   --kr: #e15055; --cn: #cc8d16; --jp: #ad6db7; --us: #50a0ee;
   --on-chip: #121316;
   --shadow: 0 10px 30px rgba(0, 0, 0, .5), 0 1px 3px rgba(0, 0, 0, .4);
+  --q-up: #ff6b6b; --q-dn: #72a6ff;
+  --c-up: #ef5b60; --c-dn: #4f8ff0; --c-ma1: #9a6c12; --c-ma2: #2fa39c;
+  --hm-n: #2c2e34; --hm-u1: #502b31; --hm-u2: #72303a; --hm-u3: #a1343f; --hm-u4: #c93a45;
+  --hm-d1: #253350; --hm-d2: #284777; --hm-d3: #2b5dab; --hm-d4: #3270d2; --hm-ink: #eceef2;
 }
 
 * { box-sizing: border-box; }
@@ -539,9 +552,6 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .quotes.mc .q-mi { min-width: 0; }
 .quotes.mc .q-tabs, .quotes.mc .fx, .quotes.mc .q-add { max-width: 492px; width: 100%; }
 .quotes.mc .q-cap { max-width: 620px; }
-:root { --q-up: #d4333b; --q-dn: #2d6fd6; }
-:root[data-theme="dark"] { --q-up: #ff6b6b; --q-dn: #72a6ff; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --q-up: #ff6b6b; --q-dn: #72a6ff; } }
 
 /* ── 휴대폰(웹앱): 아래 탭으로 달력 / 시세 전환 ── */
 .mnav { display: none; }
@@ -608,9 +618,6 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .grip svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; }
 
 /* ── 종목 상세 (시세 줄을 누르면): 1분·30분·일·주·월·년 차트 + 시세 표 ── */
-:root { --c-up: #d4333b; --c-dn: #2d6fd6; --c-ma1: #e07a10; --c-ma2: #139a8f; }
-:root[data-theme="dark"] { --c-up: #ef5b60; --c-dn: #4f8ff0; --c-ma1: #9a6c12; --c-ma2: #2fa39c; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --c-up: #ef5b60; --c-dn: #4f8ff0; --c-ma1: #9a6c12; --c-ma2: #2fa39c; } }
 .q-row { cursor: pointer; }
 .q-row:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 .qd {
@@ -644,15 +651,6 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .qd-read .k { color: var(--muted); margin-right: 3px; font-weight: 500; }
 .qd-read b { color: var(--text); }
 .qd-read .up { color: var(--q-up); font-weight: 700; } .qd-read .dn { color: var(--q-dn); font-weight: 700; } .qd-read .flat { color: var(--muted); font-weight: 700; }
-/* 차트에 보이는 구간 요약: 시가 · 고점(때) · 저점(때) · 종가 · 등락 · 고저폭 */
-.qd-rng { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 11px; min-height: 19px; margin: 0 0 6px; padding: 4px 8px; border-radius: 8px; background: var(--bg2); font-size: 13px; color: var(--text2); font-variant-numeric: tabular-nums; }
-.qd-rng:empty { display: none; }
-.qd-rng .lab { font-weight: 700; color: var(--text); }
-.qd-rng .k { color: var(--muted); margin-right: 3px; font-weight: 500; }
-.qd-rng b { color: var(--text); font-weight: 700; }
-.qd-rng small { margin-left: 3px; font-size: 11.5px; color: var(--muted); }
-.qd-rng .up { color: var(--q-up); font-weight: 700; } .qd-rng .dn { color: var(--q-dn); font-weight: 700; } .qd-rng .flat { color: var(--muted); font-weight: 700; }
-.qd.nohist .qd-rng { display: none; }
 .qd-cv { position: relative; height: clamp(230px, 43vh, 500px); }
 .qd-cv canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; cursor: crosshair; }
 .qd-cv canvas.grab { cursor: grabbing; }
@@ -725,12 +723,6 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 /* ── 히트맵 (한국·미국·일본): 크기 = 시가총액, 색 = 오늘 등락률 ──
    색 9단계: 내림 d4~d1 · 보합 n(±0.3% 안) · 오름 u1~u4 (경계 0.3·1·2·3%) — 한국식 빨강 = 오름, 파랑 = 내림
    밝기가 단계마다 고르게 바뀜, 글자 대비 4.5 이상 (밝은 테마: n·1·2단계 검은 글자, 3·4단계 흰 글자 / 어두운 테마: 모두 밝은 글자) */
-:root { --hm-n: #e4e6ea; --hm-u1: #f8d3d4; --hm-u2: #e9888d; --hm-u3: #d33a43; --hm-u4: #a91b25;
-        --hm-d1: #d3e1f7; --hm-d2: #87adeb; --hm-d3: #3a73d1; --hm-d4: #1a4c9f; --hm-ink: #15171c; }
-:root[data-theme="dark"] { --hm-n: #2c2e34; --hm-u1: #502b31; --hm-u2: #72303a; --hm-u3: #a1343f; --hm-u4: #c93a45;
-        --hm-d1: #253350; --hm-d2: #284777; --hm-d3: #2b5dab; --hm-d4: #3270d2; --hm-ink: #eceef2; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --hm-n: #2c2e34; --hm-u1: #502b31; --hm-u2: #72303a; --hm-u3: #a1343f; --hm-u4: #c93a45;
-        --hm-d1: #253350; --hm-d2: #284777; --hm-d3: #2b5dab; --hm-d4: #3270d2; --hm-ink: #eceef2; } }
 .hm-open { display: inline-flex; align-items: center; justify-content: center; gap: 5px; }
 .hm-open svg { width: 15px; height: 15px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linejoin: round; }
 .main.tight .top .hm-open { padding: 0 8px; }
@@ -798,8 +790,6 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .hm-tbl td:first-child small { margin-left: 5px; font-size: 11.5px; font-weight: 500; color: var(--muted); }
 .hm-tbl td.sec { color: var(--text2); }
 .hm-tbl tr.sel td { background: color-mix(in srgb, var(--accent) 12%, transparent); }
-.hm-tbl .ext { display: none; }
-@container (min-width: 600px) { .hm-tbl .ext { display: table-cell; } }
 .hm-side { flex: none; display: flex; flex-direction: column; gap: 16px; min-width: 0; padding-bottom: 4px; container-type: inline-size; }
 .hm-sec h3 { display: flex; align-items: baseline; gap: 6px; margin: 0 0 5px; font-size: 14.5px; font-weight: 700; }
 .hm-sec h3 small { font-size: 11.5px; font-weight: 500; color: var(--muted); }
@@ -979,7 +969,6 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
           <div class="qd-leg" id="dvLeg"></div>
         </div>
         <div class="qd-read" id="dvRead"></div>
-        <div class="qd-rng" id="dvRng" title="지금 차트에 보이는 봉 기준 — 끌거나 휠로 넓히면 같이 바뀜"></div>
         <div class="qd-cv" id="dvCv"><canvas id="dvCanvas" aria-hidden="true"></canvas><div class="qd-msg" id="dvMsg" hidden></div></div>
       </div>
       <div class="qd-side">
@@ -1100,6 +1089,10 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   function isWeekend(dt) { var w = dt.getDay(); return w === 0 || w === 6; }
   function mdw(k) { var dt = fromKey(k); return (dt.getMonth() + 1) + '/' + dt.getDate() + '(' + WD[dt.getDay()] + ')'; }
   function todayKey() { return toKey(new Date()); }
+  function fmtN(v, dg) { return v.toLocaleString('en-US', { minimumFractionDigits: dg, maximumFractionDigits: dg }); }   // 1,234.56
+  function sgn(cls) { return cls === 'up' ? '+' : cls === 'dn' ? '−' : ''; }
+  function arw(cls) { return cls === 'up' ? '▲' : cls === 'dn' ? '▼' : ''; }
+  function pctTxt(p, cls) { return sgn(cls) + Math.abs(p).toFixed(2) + '%'; }   // cls = 그 자리의 오름·내림 판정 (up·dn·flat)
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
 
   var firstKey = D.from + '-01';
@@ -1978,11 +1971,11 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 
   /* 가격 표시 */
   function qFmt(b, c) {
-    if (IDX[b]) return c.toLocaleString('en-US', { minimumFractionDigits: IDX[b].dg, maximumFractionDigits: IDX[b].dg });
+    if (IDX[b]) return fmtN(c, IDX[b].dg);
     if (qIsKrw(b)) return fx && fx.k ? Math.round(c * fx.k).toLocaleString('ko-KR') : '$' + c.toFixed(2);
     if (c > 0 && c < 0.01) return String(+c.toPrecision(4));
     var dg = (qType(b) === 'FX' || c < 1) ? 4 : 2;
-    return c.toLocaleString('en-US', { minimumFractionDigits: dg, maximumFractionDigits: dg });
+    return fmtN(c, dg);
   }
   // 값이 바뀐 칸 잠깐 색칠: 진하게 → 0.3초 뒤 옅게 → 0.65초 뒤 끝 (다시 그리기 3번뿐 — 계속 도는 전환 효과 없이)
   function flashEl(el, dir) {
@@ -2001,7 +1994,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     setText(r.px, txt); r.v = d.c;
     var pct = d.o > 0 ? (d.c - d.o) / d.o * 100 : 0;
     var cls = pct > 0.004 ? 'up' : pct < -0.004 ? 'dn' : 'flat';
-    setText(r.ch, (cls === 'up' ? '+' : cls === 'dn' ? '−' : '') + Math.abs(pct).toFixed(2) + '%');
+    setText(r.ch, pctTxt(pct, cls));
     if (r.ch.className !== 'q-chg ' + cls) r.ch.className = 'q-chg ' + cls;
     if (qIsCash(b)) qSesPaint(b, Date.now());      // 현물 지수: 장 상태·제목은 따로
     else {
@@ -2576,30 +2569,35 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     if (qIsMac(b)) macPaint(b, had);
     return true;
   }
-  function tcParse(txt, list) {
-    var by = {}; list.forEach(function (b) { by[cashTc(IDX[b])] = b; });
+  function tcGet(codes) {                    // 텐센트 시세 → { 코드: [필드…] } (GBK 글자 — 글자로만 읽고 실행 안 함, 지수 목록·히트맵 같이 씀)
+    return fetch(TC_API + codes.join(','), { cache: 'no-store' })
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.arrayBuffer(); })
+      .then(function (buf) {
+        var txt, o = {};
+        try { txt = new TextDecoder('gbk').decode(buf); } catch (e) { txt = new TextDecoder().decode(buf); }
+        txt.split(';').forEach(function (line) { var m = line.match(/v_([A-Za-z0-9_.]+)="([^"]*)"/); if (m) o[m[1]] = m[2].split('~'); });
+        return o;
+      });
+  }
+  function tcParse(o, list) {
     var n = 0;
-    String(txt).split(';').forEach(function (line) {
-      var m = line.match(/v_([A-Za-z0-9_]+)="([^"]*)"/); if (!m || !by[m[1]]) return;
-      var b = by[m[1]], f = m[2].split('~'), c = +f[3];
-      if (/^gz/.test(m[1])) {                // 코드~이름~시각~현재가~전일대비~등락률~지역
+    list.forEach(function (b) {
+      var id = cashTc(IDX[b]), f = o[id]; if (!f) return;
+      var c = +f[3];
+      if (/^gz/.test(id)) {                  // 코드~이름~시각~현재가~전일대비~등락률~지역
         if (cashSet(b, 'tc', c, c - (+f[4]), tcTime(f[2], 'Asia/Shanghai'), {})) n++;
       } else {                               // 시장~이름~코드~현재가~전일종가~시가~… [30]시각 [33]고가 [34]저가
-        if (cashSet(b, 'tc', c, +f[4], tcTime(f[30], /^us/.test(m[1]) ? TZ.US : 'Asia/Shanghai'), { op: +f[5], hi: +f[33], lo: +f[34] })) n++;
+        if (cashSet(b, 'tc', c, +f[4], tcTime(f[30], /^us/.test(id) ? TZ.US : 'Asia/Shanghai'), { op: +f[5], hi: +f[33], lo: +f[34] })) n++;
       }
     });
     return n;
   }
   function tcLoad(list) {
-    return fetch(TC_API + list.map(function (b) { return cashTc(IDX[b]); }).join(','), { cache: 'no-store' })
-      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.arrayBuffer(); })
-      .then(function (buf) {
-        var txt;
-        try { txt = new TextDecoder('gbk').decode(buf); } catch (e) { txt = new TextDecoder().decode(buf); }
-        var n = tcParse(txt, list);
-        if (!n) throw new Error('empty');
-        return n;
-      });
+    return tcGet(list.map(function (b) { return cashTc(IDX[b]); })).then(function (o) {
+      var n = tcParse(o, list);
+      if (!n) throw new Error('empty');
+      return n;
+    });
   }
   function emParse(j, list) {                // { data: { diff: [ { f12 코드, f13 시장, f2 현재가, f18 전일 종가, f17 시가, f15 고가, f16 저가, f124 시각(초) } ] } }
     var by = {}; list.forEach(function (b) { by[IDX[b].em] = b; });
@@ -2642,10 +2640,10 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   /* ── 증시 지수 위 한 줄: VIX · 미국채 10년물 금리 — 동방재부(Eastmoney) 공개 시세, 15초마다 (data.js quotes.macro) ── */
   var MAC = (Q.macro || []).filter(function (b) { return qIsMac(b) && IDX[b].em; });
   var macT = null, macGen = 0;
-  function macFmt(b, v) { return v.toLocaleString('en-US', { minimumFractionDigits: IDX[b].dg, maximumFractionDigits: IDX[b].dg }) + (IDX[b].bp ? '%' : ''); }
+  function macFmt(b, v) { return fmtN(v, IDX[b].dg) + (IDX[b].bp ? '%' : ''); }
   function macChg(b, d) {                    // [클래스, 글자] — VIX 는 등락률, 금리는 bp(0.01%p) — 목록과 같은 모양 (+ · −)
     var df = d.c - d.o, bp = IDX[b].bp, cls = bp ? (df > 0.00049 ? 'up' : df < -0.00049 ? 'dn' : 'flat') : dvCls(df / d.o * 100);
-    var sg = cls === 'up' ? '+' : cls === 'dn' ? '−' : '';
+    var sg = sgn(cls);
     return [cls, sg + (bp ? Math.abs(df * 100).toFixed(1) + 'bp' : Math.abs(df / d.o * 100).toFixed(2) + '%')];
   }
   function macHtml() {
@@ -2660,8 +2658,8 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     var v = el.querySelector('b'), c = el.querySelector('.c'), prev = v.textContent, txt = macFmt(b, d.c), ch = macChg(b, d);
     v.textContent = txt; c.textContent = ch[1]; c.className = 'c ' + ch[0];
     var now = Date.now();
-    el.title = I.n + ' — ' + I.sub + '\n지금 ' + txt + ' · 전일 ' + macFmt(b, d.o) + ' (' + (d.c >= d.o ? '+' : '−') + Math.abs((d.c - d.o) / d.o * 100).toFixed(2) + '%' +
-      (I.bp ? ', ' + (d.c >= d.o ? '+' : '−') + Math.abs((d.c - d.o) * 100).toFixed(1) + 'bp' : '') + ')' +
+    el.title = I.n + ' — ' + I.sub + '\n지금 ' + txt + ' · 전일 ' + macFmt(b, d.o) + ' (' + pctTxt((d.c - d.o) / d.o * 100, d.c > d.o ? 'up' : d.c < d.o ? 'dn' : 'flat') +
+      (I.bp ? ', ' + sgn(d.c > d.o ? 'up' : d.c < d.o ? 'dn' : 'flat') + Math.abs((d.c - d.o) * 100).toFixed(1) + 'bp' : '') + ')' +
       (d.t ? '\n값 기준 ' + kstShort(d.t, now) + ' (한국 시각)' : '') + '\n출처: 동방재부(Eastmoney) 공개 시세 · 15초마다\n누르면 차트';
     if (flash && prev !== '—' && prev !== txt) flashEl(el, parseFloat(txt.replace(/,/g, '')) > parseFloat(prev.replace(/,/g, '')) ? 'up' : 'dn');
   }
@@ -2774,7 +2772,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     var ref = cb ? fxRef(fxPair) : null;
     if (ref) {
       var dv = v - ref.v, pct = dv / ref.v * 100, cls = Math.abs(pct) < 0.005 ? 'flat' : dv > 0 ? 'up' : 'dn';
-      cEl.textContent = (cls === 'up' ? '▲' : cls === 'dn' ? '▼' : '') + Math.abs(dv).toFixed(2) + ' (' + (cls === 'up' ? '+' : cls === 'dn' ? '−' : '') + Math.abs(pct).toFixed(2) + '%)';
+      cEl.textContent = arw(cls) + Math.abs(dv).toFixed(2) + ' (' + pctTxt(pct, cls) + ')';
       cEl.className = 'fx-c ' + cls;
     }
     el.title = P.code + ' (' + P.name + ') — ' + P.unit + ' = ' + fx2(v) + P.suf + '\n' +
@@ -2800,7 +2798,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
                  d: { n: '일봉', cnt: 90, u: '일' }, w: { n: '주봉', cnt: 60, u: '주' }, m: { n: '월봉', cnt: 48, u: '개월' }, y: { n: '년봉', cnt: 30, u: '년' } };
   var DV_FONT = '"Pretendard Variable", Pretendard, "Malgun Gothic", system-ui, sans-serif';
   var dv = { b: null, per: store.get('dvPer', 'd'), daily: null, ext: {}, errK: {}, failAt: {}, D: null, S: null, hover: -1, pin: -1, end: -1, slot: 0, ptrY: null,
-             busy: null, refT: null, tick: 0, raf: 0, pushed: false, skipPop: false, L: null, drag: null, touching: false, axisW: 56, back: null, rngKey: '' };
+             busy: null, refT: null, tick: 0, raf: 0, pushed: false, skipPop: false, L: null, drag: null, touching: false, axisW: 56, back: null };
   if (!DV_PER[dv.per]) dv.per = 'd';
   var dvCache = {}, dvHistSrc = {};          // 키 = 기호:자료(1·30·d·y) / dvHistSrc: 현물 지수 차트 자료를 받은 곳 (em·tc)
   function dvKind(per) { return per === 'w' || per === 'm' ? 'd' : per; }     // 받아 오는 자료: 1분 · 30분 · 일(일·주·월) · 년
@@ -2977,7 +2975,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   }
   function dvFmt(v, dg) {
     if (dg == null) dg = dvDg(v);
-    return v.toLocaleString('en-US', { minimumFractionDigits: dg, maximumFractionDigits: dg });
+    return fmtN(v, dg);
   }
   function dvTrim(s) { return s.indexOf('.') >= 0 ? s.replace(/0+$/, '').replace(/\.$/, '') : s; }
   function dvVol(v) {                        // 거래량: 만·억 단위
@@ -3035,8 +3033,8 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
       var pct = (c - q.o) / q.o * 100, cls = dvCls(pct);
       if (bp) {                              // 금리: bp(0.01%p) 먼저
         var bpv = (c - q.o) * 100; cls = bpv > 0.049 ? 'up' : bpv < -0.049 ? 'dn' : 'flat';
-        el.textContent = (cls === 'up' ? '▲' : cls === 'dn' ? '▼' : '') + Math.abs(bpv).toFixed(1) + 'bp (' + (cls === 'up' ? '+' : cls === 'dn' ? '−' : '') + Math.abs(pct).toFixed(2) + '%)';
-      } else el.textContent = (cls === 'up' ? '▲' : cls === 'dn' ? '▼' : '') + dvFmt(Math.abs(c - q.o) * k, dvDg(c * k)) + ' (' + (cls === 'up' ? '+' : cls === 'dn' ? '−' : '') + Math.abs(pct).toFixed(2) + '%)';
+        el.textContent = arw(cls) + Math.abs(bpv).toFixed(1) + 'bp (' + pctTxt(pct, cls) + ')';
+      } else el.textContent = dvChgText(c - q.o, pct, c);
       el.className = 'qd-chg ' + cls; $('dvChgL').hidden = false;
     } else { el.textContent = ''; el.className = 'qd-chg flat'; $('dvChgL').hidden = true; }
   }
@@ -3058,7 +3056,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     else if (per === 'y') ps.push('년봉 = 1~12월 한 해 · ' + (cm ? (hs === 'em' ? '기록이 있는 처음부터' : '일봉으로 만든 최근 몇 년 (전체 기록은 동방재부 차트 서버가 될 때)') : '거래를 시작한 뒤부터 (짧으면 1~2개)'));
     else if (cm) ps.push('하루 봉 = 거래일 (주말·휴장일 없음)' + (cash ? ' · 정규장 ' + cashHours(I.mkt, Date.now()) + ' (한국 시각)' : ''));
     else ps.push('하루 봉은 한국시간 오전 9시에 바뀜 · 주봉은 월~일 · 24시간 거래라 주말 봉도 있음');
-    ps.push('위 회색 줄 = 차트에 보이는 구간 요약(시가 → 종가 등락 · 고점 · 저점 · 고저폭) · 차트의 고점·저점 옆 % = 지금 가격이 그 값보다 몇 % 위(+)·아래(−)');
+    ps.push('차트의 고점·저점 = 지금 보이는 구간에서 가장 높은·낮은 값 · \'지금 −n%\' = 지금 가격이 그 값보다 n% 아래(+면 위)');
     ps.push('진한 거래량 = 직전 20봉 평균의 2배 이상' + (cm ? ' (거래량이 없는 지수도 있음)' : '') + ' · 출처: ' + src);
     if (cash && !dvAnyHist(b)) ps = ['정규장 ' + cashHours(I.mkt, Date.now()) + ' (한국 시각) · 장 시간에만 움직임', '출처: ' + src + ' — 시세 기록은 무료로 받을 곳이 없어 차트는 없음'];
     if (qIsKrw(b)) ps.push(dvKrw() ? '원화 = 달러 가격 × 지금 환율 ' + fx2(fx.k) + '원 (지난 가격도 지금 환율로 환산)' : '환율을 받기 전이라 달러로 표시');
@@ -3089,36 +3087,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   var DV_CHG = { '1': '직전 봉 대비', '30': '직전 봉 대비', d: '전일 대비', w: '전주 대비', m: '전월 대비', y: '전년 대비' };
   function dvChgText(df, pct, ref) {         // '▲29.59 (+0.63%)'
     var cls = dvCls(pct), k = dvMul();
-    return (cls === 'up' ? '▲' : cls === 'dn' ? '▼' : '') + dvFmt(Math.abs(df) * k, dvDg(ref * k)) + ' (' + (cls === 'up' ? '+' : cls === 'dn' ? '−' : '') + Math.abs(pct).toFixed(2) + '%)';
-  }
-  function dvShort(t, per, full) {           // 구간 요약용 짧은 때 (full: 날짜·해까지)
-    if (dvIntra(per)) { var p = dvKst(t); return (full ? p.m + '/' + p.d + ' ' : '') + p.hm; }
-    var d = new Date(t), y = d.getUTCFullYear(), m = d.getUTCMonth() + 1;
-    if (per === 'y') return y + '년';
-    if (per === 'm') return (full ? y + '.' : '') + m + '월';
-    return (full ? y + '.' : '') + m + '/' + d.getUTCDate();
-  }
-  function dvRange(L) {                      // 차트에 보이는 구간 요약 (끌기·휠로 바뀌면 같이)
-    var el = $('dvRng'), S = dv.S;
-    if (!L || !S || !S.length) { if (dv.rngKey !== '') { dv.rngKey = ''; el.innerHTML = ''; } return; }
-    var s = L.s, e = L.e, per = dv.per, k = dvMul(), ih = s, il = s, i;
-    for (i = s; i <= e; i++) { if (S[i].h > S[ih].h) ih = i; if (S[i].l < S[il].l) il = i; }
-    var key = [dv.b, per, s, e, S.length, S[s].o, S[e].c, S[ih].h, S[il].l, k].join('|');
-    if (key === dv.rngKey) return;
-    dv.rngKey = key;
-    var o = S[s].o, c = S[e].c, hi = S[ih].h, lo = S[il].l, pct = o ? (c - o) / o * 100 : 0, cls = dvCls(pct);
-    var live = e === S.length - 1 && dvIsLive(S[e].t, per), intra = dvIntra(per);
-    var y0 = new Date(S[s].t).getUTCFullYear(), y1 = new Date(S[e].t).getUTCFullYear();
-    var multi = intra ? dvKst(S[s].t).key !== dvKst(S[e].t).key : y0 !== y1;      // 날(분봉)·해(일·주·월)가 바뀌면 끝·고점·저점에도 날짜
-    var span = per === 'y' ? y0 + (y0 === y1 ? '년' : ' ~ ' + y1 + '년') : dvShort(S[s].t, per, intra || multi) + ' ~ ' + dvShort(S[e].t, per, multi);
-    var it = function (lab, v) { return '<span><span class="k">' + lab + '</span>' + v + '</span>'; };
-    el.innerHTML = '<span class="lab">보이는 구간</span><span>' + esc(span) + ' <small>' + (e - s + 1) + '봉</small></span>' +
-      it('시가', dvFmt(o * k)) +
-      it('고점', dvFmt(hi * k) + '<small>' + esc(dvShort(S[ih].t, per, multi)) + '</small>') +
-      it('저점', dvFmt(lo * k) + '<small>' + esc(dvShort(S[il].t, per, multi)) + '</small>') +
-      it(live ? '현재' : '종가', '<b>' + dvFmt(c * k) + '</b>') +
-      '<span><span class="' + cls + '">' + dvChgText(c - o, pct, c) + '</span> <span class="k">시가 대비</span></span>' +
-      it('고저폭', (lo > 0 ? ((hi - lo) / lo * 100).toFixed(2) : '0.00') + '%');
+    return arw(cls) + dvFmt(Math.abs(df) * k, dvDg(ref * k)) + ' (' + pctTxt(pct, cls) + ')';
   }
 
   /* 시세 표 (최근 → 과거, 최대 400줄): 일·주·월은 일별, 1분·30분·년은 그 봉 */
@@ -3132,8 +3101,8 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     return '<tr data-i="' + i + '"' + (dv.pin === i && dv.per === per ? ' class="sel"' : '') + '>' +
       '<td' + (we ? ' class="we"' : '') + '>' + when + (live ? '<small>진행 중</small>' : '') + '</td>' +
       '<td><b>' + dvFmt(x.c * k) + '</b></td>' +
-      '<td class="ext ' + cls + '">' + (df == null ? '—' : (cls === 'up' ? '▲' : cls === 'dn' ? '▼' : '') + dvFmt(Math.abs(df) * k, dvDg(x.c * k))) + '</td>' +
-      '<td class="' + cls + '">' + (pct == null ? '—' : (cls === 'up' ? '+' : cls === 'dn' ? '−' : '') + Math.abs(pct).toFixed(2) + '%') + '</td>' +
+      '<td class="ext ' + cls + '">' + (df == null ? '—' : arw(cls) + dvFmt(Math.abs(df) * k, dvDg(x.c * k))) + '</td>' +
+      '<td class="' + cls + '">' + (pct == null ? '—' : pctTxt(pct, cls)) + '</td>' +
       '<td class="ext2">' + dvFmt(x.o * k) + '</td><td>' + dvFmt(x.h * k) + '</td><td>' + dvFmt(x.l * k) + '</td>' +
       '<td' + (x.va > 0 && x.v >= 2 * x.va ? ' class="hot" title="직전 20봉 평균의 ' + (x.v / x.va).toFixed(1) + '배"' : '') + '>' + dvVol(x.v) + '</td></tr>';
   }
@@ -3253,7 +3222,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     var g = cv.getContext('2d');
     g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H);
     var S = dv.S; dv.L = null;
-    if (!S || !S.length) { dvRange(null); return; }
+    if (!S || !S.length) return;
     var C = dvColors(), k = dvMul(), L = dvWin(W), s = L.s, e = L.e, slot = L.slot, plotR = L.plotR;
     var xAxisH = 22, gap = 10, top = 8, volH = Math.max(36, Math.round((H - xAxisH) * 0.22));
     var priceB = H - xAxisH - volH - gap, volTop = priceB + gap, volB = H - xAxisH;
@@ -3265,12 +3234,11 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
       for (var m = 0; m < x.ma.length; m++) if (x.ma[m] != null) { if (x.ma[m] < lo) lo = x.ma[m]; if (x.ma[m] > hi) hi = x.ma[m]; }
     }
     lo *= k; hi *= k;
-    var pad = (hi - lo) * 0.08 || hi * 0.01 || 1; lo -= pad; hi += pad;
+    var pad = (hi - lo) * 0.08 || hi * 0.01 || 1; lo = lo > 0 ? Math.max(0, lo - pad) : lo - pad; hi += pad;   // 가격은 0 아래로 안 그림
     var yv = function (v) { return top + (hi - v) / (hi - lo) * (priceB - top); };   // v: 화면 단위
     var Y = function (raw) { return yv(raw * k); };
     L.top = top; L.priceB = priceB; L.volB = volB; L.lo = lo; L.hi = hi; L.W = W; L.H = H;
     dv.L = L;
-    dvRange(L);
     g.textBaseline = 'middle';
     // 가로 눈금선 + 오른쪽 가격
     var nt = dvNice(lo, hi, Math.max(3, Math.min(6, Math.round((priceB - top) / 56))));
@@ -3332,7 +3300,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
       g.font = '700 11.5px ' + DV_FONT; g.textAlign = 'left'; g.textBaseline = 'middle'; g.lineJoin = 'round';
       [[ih, S[ih].h, 1], [il, S[il].l, 0]].forEach(function (q) {
         var v = q[1], pc = (cur - v) / v * 100, pcl = dvCls(pc);
-        var txt = (q[2] ? '고점 ' : '저점 ') + dvFmt(v * k) + ' (' + (pcl === 'up' ? '+' : pcl === 'dn' ? '−' : '') + Math.abs(pc).toFixed(2) + '%)';
+        var txt = (q[2] ? '고점 ' : '저점 ') + dvFmt(v * k) + ' · 지금 ' + sgn(pcl) + (Math.abs(pc) >= 100 ? fmtN(Math.abs(pc), 0) : Math.abs(pc).toFixed(2)) + '%';
         var tw = g.measureText(txt).width, px = xc(q[0]), py = Y(v);
         var tx = Math.max(2, Math.min(plotR - tw - 2, px - tw / 2));
         var ty = q[2] ? Math.max(top + 7, py - 10) : Math.min(priceB - 7, py + 11);
@@ -3346,12 +3314,11 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
       g.fillStyle = C.muted; g.textAlign = 'right'; g.font = '500 11px ' + DV_FONT;
       g.fillText(dvWhen(S[0].t, dv.per === 'y' ? 'y' : dv.per === 'm' ? 'm' : 'd', true).replace(/\(.\)$/, '') + ' 첫 기록 →', xc(0) - slot, top + 10);
     }
-    // 마지막 가격 선 + 오른쪽 표시
-    var last = S[S.length - 1];
+    // 마지막 가격 선 (오른쪽 가격 표시는 십자선 뒤에 그려서 늘 위에)
+    var last = S[S.length - 1], yL = null, lc = last.up ? C.up : C.dn;
     if (e === S.length - 1) {
-      var yL = Math.round(Y(last.c)) + 0.5, lc = last.up ? C.up : C.dn;
+      yL = Math.round(Y(last.c)) + 0.5;
       g.strokeStyle = lc; g.globalAlpha = 0.45; g.lineWidth = 1; g.beginPath(); g.moveTo(0, yL); g.lineTo(plotR, yL); g.stroke(); g.globalAlpha = 1;
-      dvPill(g, plotR + 3, yL, dvFmt(last.c * k), lc, '#ffffff', W);
     }
     // 십자선
     var hi2 = dv.hover >= 0 ? dv.hover : dv.pin;
@@ -3363,12 +3330,13 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
         var hy = Math.round(dv.ptrY) + 0.5;
         g.beginPath(); g.moveTo(0, hy); g.lineTo(plotR, hy); g.stroke();
         g.globalAlpha = 1;
-        dvPill(g, plotR + 3, hy, dvFmt(hi - (dv.ptrY - top) / (priceB - top) * (hi - lo)), C.text, C.bg, W);
+        if (yL == null || Math.abs(hy - yL) >= 20) dvPill(g, plotR + 3, hy, dvFmt(hi - (dv.ptrY - top) / (priceB - top) * (hi - lo)), C.text, C.bg, W);   // 마지막 가격 표시와 겹치면 생략
       }
       g.globalAlpha = 1;
       var dt = new Date(S[hi2].t), kk = dvIntra(dv.per) ? dvKst(S[hi2].t) : null;
       dvPill(g, hx, H - xAxisH / 2, kk ? kk.m + '/' + kk.d + ' ' + kk.hm : dv.per === 'y' ? dt.getUTCFullYear() + '년' : dv.per === 'm' ? dt.getUTCFullYear() + '.' + (dt.getUTCMonth() + 1) : (dt.getUTCMonth() + 1) + '/' + dt.getUTCDate() + (dv.per === 'w' ? ' 주' : ''), C.text, C.bg, plotR, true);
     }
+    if (yL != null) dvPill(g, plotR + 3, yL, dvFmt(last.c * k), lc, '#ffffff', W);
   }
 
   /* 열기 · 닫기 · 받아오기 */
@@ -3967,16 +3935,6 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   function hmUsName(t) { var U = HM.us || {}; return (U.n && U.n[t]) || (Q.names && Q.names[t] && Q.names[t][0]) || t.replace('_', '.'); }
 
   /* 받기 */
-  function hmTcGet(codes) {              // 텐센트 { 코드: [필드…] }
-    return fetch(TC_API + codes.join(','), { cache: 'no-store' })
-      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.arrayBuffer(); })
-      .then(function (buf) {
-        var txt, o = {};
-        try { txt = new TextDecoder('gbk').decode(buf); } catch (e) { txt = new TextDecoder().decode(buf); }
-        txt.split(';').forEach(function (line) { var m = line.match(/v_([A-Za-z0-9_.]+)="([^"]*)"/); if (m) o[m[1]] = m[2].split('~'); });
-        return o;
-      });
-  }
   function hmIdxOf(o, m) {               // 지수 { '@KOSPI': { c 현재, pct 등락률, t 시각 } } — gz 짧은 형식 · us 긴 형식
     var r = {};
     HM_MK[m].idx.forEach(function (b) {
@@ -3999,7 +3957,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   function hmLoadTc(m) {                 // 한국·일본: 대표 종목 + 지수 (시각은 베이징 시각, 거래대금 = 거래량 × 현재가 어림)
     var K = HM_MK[m], list = HM[m] || [], codes = list.map(function (x) { return K.pre + x[0]; });
     K.idx.forEach(function (b) { var id = IDX[b] && cashTc(IDX[b]); if (id) codes.push(id); });
-    return hmTcGet(codes).then(function (o) {
+    return tcGet(codes).then(function (o) {
       var rows = [];
       list.forEach(function (x) {
         var f = o[K.pre + x[0]]; if (!f) return;
@@ -4029,7 +3987,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   }
   function hmLoadUsTc() {                // 동방재부가 안 되면 텐센트로 목록(list) 종목 (시각은 뉴욕 시각)
     var L = String((HM.us || {}).list || '').split(/\s+/).map(function (x) { return x.split(':'); }).filter(function (x) { return x[0] && HM_SC[x[1]]; });
-    return hmTcGet(L.map(function (x) { return 'us' + x[0].replace('_', '.'); })).then(function (o) {
+    return tcGet(L.map(function (x) { return 'us' + x[0].replace('_', '.'); })).then(function (o) {
       var rows = [];
       L.forEach(function (x) {
         var f = o['us' + x[0].replace('_', '.')]; if (!f) return;
@@ -4042,7 +4000,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     });
   }
   function hmLoadUs() {
-    var ix = hmTcGet(HM_MK.us.idx.map(function (b) { return cashTc(IDX[b]); }).filter(Boolean))
+    var ix = tcGet(HM_MK.us.idx.map(function (b) { return cashTc(IDX[b]); }).filter(Boolean))
       .then(function (o) { return hmIdxOf(o, 'us'); }, function () { return {}; });
     return Promise.all([hmLoadUsEm().catch(hmLoadUsTc), ix]).then(function (r) { return { rows: r[0], idx: r[1] }; });
   }
@@ -4064,25 +4022,23 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   }
 
   /* 숫자 글자 */
-  function hmUD(v) { return v > 0 ? 'up' : v < 0 ? 'dn' : 'flat'; }
   function hmCls(p) {                    // n(±0.3% 안) · u1~u4 오름 · d1~d4 내림
     var a = Math.abs(p), i = a < HM_STEP[0] ? 0 : a < HM_STEP[1] ? 1 : a < HM_STEP[2] ? 2 : a < HM_STEP[3] ? 3 : 4;
     return i ? (p > 0 ? 'u' : 'd') + i : 'n';
   }
-  function hmPct(v) { return (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(2) + '%'; }
-  function hmPp(v) { return (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(2) + '%p'; }
-  function hmNum(v, dg) { return v.toLocaleString('en-US', { minimumFractionDigits: dg, maximumFractionDigits: dg }); }
+  function hmPct(v) { return pctTxt(v, dvCls(v)); }
+  function hmPp(v) { return sgn(dvCls(v)) + Math.abs(v).toFixed(2) + '%p'; }
   function hmDg(m, p) { return m === 'us' ? 2 : m === 'jp' && p < 1000 ? 1 : 0; }
-  function hmPxN(m, v, p) { return hmNum(v, hmDg(m, p == null ? v : p)); }
-  function hmPx(m, v) { return m === 'us' ? '$' + hmNum(v, 2) : hmPxN(m, v) + (m === 'jp' ? '엔' : '원'); }
-  function hmChg(m, v, p) { return (v > 0 ? '▲' : v < 0 ? '▼' : '') + hmPxN(m, Math.abs(v), p); }
+  function hmPxN(m, v, p) { return fmtN(v, hmDg(m, p == null ? v : p)); }
+  function hmPx(m, v) { return m === 'us' ? '$' + fmtN(v, 2) : hmPxN(m, v) + (m === 'jp' ? '엔' : '원'); }
+  function hmChg(m, v, p) { return arw(v > 0 ? 'up' : v < 0 ? 'dn' : 'flat') + hmPxN(m, Math.abs(v), p); }
   function hmMoney(m, v) {               // 조 · 억 (+엔 · 달러)
     var u = m === 'us' ? ' 달러' : m === 'jp' ? '엔' : '';
     if (!(v > 0)) return '—';
-    if (v >= 1e14) return hmNum(Math.round(v / 1e12), 0) + '조' + u;
+    if (v >= 1e14) return fmtN(Math.round(v / 1e12), 0) + '조' + u;
     if (v >= 1e12) return (v / 1e12).toFixed(v >= 1e13 ? 1 : 2) + '조' + u;
-    if (v >= 1e8) return hmNum(Math.round(v / 1e8), 0) + '억' + u;
-    return hmNum(Math.round(v / 1e4), 0) + '만' + u;
+    if (v >= 1e8) return fmtN(Math.round(v / 1e8), 0) + '억' + u;
+    return fmtN(Math.round(v / 1e4), 0) + '만' + u;
   }
   function hmRate(m) {                   // 원화 환산 (위젯 환율 카드와 같은 값: 1달러당 원 · 1달러당 엔)
     if (m === 'kr') return 1;
@@ -4190,7 +4146,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     hm.L = lay.tiles;
     lay.tiles.forEach(function (t, i) { if (t.r.k === hm.fk) fi = i; });
     lay.heads.forEach(function (s) {
-      h += '<div class="hm-sh" style="left:' + s.x + 'px;top:' + s.y + 'px;width:' + s.w + 'px"><b>' + esc(s.s.s) + '</b><span class="' + hmUD(s.s.pct) + '">' + hmPct(s.s.pct) + '</span></div>';
+      h += '<div class="hm-sh" style="left:' + s.x + 'px;top:' + s.y + 'px;width:' + s.w + 'px"><b>' + esc(s.s.s) + '</b><span class="' + dvCls(s.s.pct) + '">' + hmPct(s.s.pct) + '</span></div>';
     });
     lay.tiles.forEach(function (t, i) { h += hmTileHtml(m, t, i, i === fi ? 0 : -1); });
     tl.innerHTML = h;
@@ -4208,8 +4164,8 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     }).join('') + '</tr></thead><tbody>';
     rows.forEach(function (r) {
       h += '<tr data-k="' + esc(r.k) + '"' + (r.k === hm.pinK ? ' class="sel"' : '') + '><td><b>' + esc(r.n) + '</b><small>' + esc(r.k.replace('_', '.')) + '</small></td>' +
-        '<td class="sec ext">' + esc(r.sec) + '</td><td class="' + hmUD(r.pct) + '"><b>' + hmPct(r.pct) + '</b></td><td>' + hmPxN(m, r.p) + '</td>' +
-        '<td class="' + hmUD(r.ctb) + '">' + hmPp(r.ctb) + '</td><td>' + (r.amt > 0 ? (r.est ? '약 ' : '') + hmWon(m, r.amt) : '—') + '</td>' +
+        '<td class="sec ext">' + esc(r.sec) + '</td><td class="' + dvCls(r.pct) + '"><b>' + hmPct(r.pct) + '</b></td><td>' + hmPxN(m, r.p) + '</td>' +
+        '<td class="' + dvCls(r.ctb) + '">' + hmPp(r.ctb) + '</td><td>' + (r.amt > 0 ? (r.est ? '약 ' : '') + hmWon(m, r.amt) : '—') + '</td>' +
         (m === 'us' ? '<td class="ext">' + (r.vr > 0 ? r.vr.toFixed(2) + '배' : '—') + '</td>' : '') + '<td class="ext">' + hmWon(m, r.cap) + '</td></tr>';
     });
     $('hmTbl').innerHTML = h + '</tbody>';
@@ -4225,14 +4181,14 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     var mx = Math.max(0.5, Math.max.apply(null, secs.map(function (s) { return Math.abs(s.pct); })));
     h += '<section class="hm-sec"><h3>업종별 <small>시총 가중 · 누르면 강조</small></h3>';
     secs.forEach(function (s) {
-      var c = hmUD(s.pct);
+      var c = dvCls(s.pct);
       h += '<button class="hm-sb' + (hm.sec === s.s ? ' on' : '') + '" data-s="' + esc(s.s) + '" title="' + esc(s.s + ' · ' + s.rows.length + '종목') + '"><span class="nm">' + esc(s.s) + '</span>' +
         '<span class="bar"><i class="' + c + '" style="width:' + (Math.abs(s.pct) / mx * 50).toFixed(1) + '%"></i></span><span class="v ' + c + '">' + hmPct(s.pct) + '</span></button>';
     });
     h += '</section>';
-    var pctV = function (r) { return '<span class="v ' + hmUD(r.pct) + '">' + hmPct(r.pct) + '</span>'; };
+    var pctV = function (r) { return '<span class="v ' + dvCls(r.pct) + '">' + hmPct(r.pct) + '</span>'; };
     var byC = rows.slice().sort(function (a, b) { return b.ctb - a.ctb; });
-    var ctbV = function (r) { return '<span class="v ' + hmUD(r.ctb) + '">' + hmPp(r.ctb) + '</span>'; };
+    var ctbV = function (r) { return '<span class="v ' + dvCls(r.ctb) + '">' + hmPp(r.ctb) + '</span>'; };
     h += '<section class="hm-sec"><h3>지수 영향 <small>비중 × 등락률</small></h3><div class="hm-two"><div><h4>끌어올림</h4>' +
       hmItems(byC.filter(function (r) { return r.ctb > 0; }).slice(0, 3), ctbV) + '</div><div><h4>끌어내림</h4>' +
       hmItems(byC.filter(function (r) { return r.ctb < 0; }).reverse().slice(0, 3), ctbV) + '</div></div></section>';
@@ -4240,11 +4196,11 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     h += '<section class="hm-sec"><h3>급등 · 급락</h3><div class="hm-two"><div><h4>오른 종목</h4>' +
       hmItems(byP.filter(function (r) { return r.pct > 0; }).slice(0, 3), pctV) + '</div><div><h4>내린 종목</h4>' +
       hmItems(byP.filter(function (r) { return r.pct < 0; }).reverse().slice(0, 3), pctV) + '</div></div></section>';
-    var amtV = function (r) { return '<span class="v">' + (r.est ? '약 ' : '') + hmWon(m, r.amt) + '<small class="' + hmUD(r.pct) + '">' + hmPct(r.pct) + '</small></span>'; };
+    var amtV = function (r) { return '<span class="v">' + (r.est ? '약 ' : '') + hmWon(m, r.amt) + '<small class="' + dvCls(r.pct) + '">' + hmPct(r.pct) + '</small></span>'; };
     h += '<section class="hm-sec"><h3>거래대금 상위' + (m === 'us' ? '' : ' <small>거래량 × 현재가 어림</small>') + '</h3>' +
       hmItems(rows.filter(function (r) { return r.amt > 0; }).sort(function (a, b) { return b.amt - a.amt; }).slice(0, 5), amtV) + '</section>';
     if (m === 'us' && rows.some(function (r) { return r.vr > 0; })) {
-      var vrV = function (r) { return '<span class="v">' + r.vr.toFixed(1) + '배<small class="' + hmUD(r.pct) + '">' + hmPct(r.pct) + '</small></span>'; };
+      var vrV = function (r) { return '<span class="v">' + r.vr.toFixed(1) + '배<small class="' + dvCls(r.pct) + '">' + hmPct(r.pct) + '</small></span>'; };
       h += '<section class="hm-sec"><h3>거래량 급증 <small>평소 같은 시각의 1.5배 이상</small></h3>' +
         hmItems(rows.filter(function (r) { return r.vr >= 1.5; }).sort(function (a, b) { return b.vr - a.vr; }).slice(0, 5), vrV) + '</section>';
     }
@@ -4256,11 +4212,11 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
       var x = d && d.idx[b], q = qData[b];
       if (!x && q && q.c > 0 && q.o > 0) x = { c: q.c, pct: (q.c - q.o) / q.o * 100 };
       if (!x || !IDX[b]) return;
-      h += '<button class="hm-ix" data-b="' + esc(b) + '" title="' + esc(IDX[b].n + ' — 누르면 차트') + '"><span>' + esc(IDX[b].n) + '</span><b>' + hmNum(x.c, 2) + '</b><span class="' + hmUD(x.pct) + '">' + hmPct(x.pct) + '</span></button>';
+      h += '<button class="hm-ix" data-b="' + esc(b) + '" title="' + esc(IDX[b].n + ' — 누르면 차트') + '"><span>' + esc(IDX[b].n) + '</span><b>' + fmtN(x.c, 2) + '</b><span class="' + dvCls(x.pct) + '">' + hmPct(x.pct) + '</span></button>';
     });
     if (st) {
       var n = rows.length, wd = function (c) { return (c / n * 100).toFixed(1) + '%'; };
-      h += '<span class="hm-avg" title="표시한 ' + n + '종목을 시가총액 비중으로 평균한 등락률">대표 ' + n + '종목 <b class="' + hmUD(st.avg) + '">' + hmPct(st.avg) + '</b></span>' +
+      h += '<span class="hm-avg" title="표시한 ' + n + '종목을 시가총액 비중으로 평균한 등락률">대표 ' + n + '종목 <b class="' + dvCls(st.avg) + '">' + hmPct(st.avg) + '</b></span>' +
         '<span class="hm-br" title="오른 종목 ' + st.up + ' · 그대로 ' + st.fl + ' · 내린 종목 ' + st.dn + '"><span class="up">▲' + st.up + '</span><span class="hm-brbar">' +
         (st.up ? '<i class="u" style="width:' + wd(st.up) + '"></i>' : '') + (st.fl ? '<i class="f" style="width:' + wd(st.fl) + '"></i>' : '') + (st.dn ? '<i class="d" style="width:' + wd(st.dn) + '"></i>' : '') +
         '</span><span class="dn">▼' + st.dn + '</span></span>';
@@ -4320,11 +4276,11 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     var el = function (tag, cls, txt, par) { var e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; (par || tip).appendChild(e); return e; };
     var t1 = el('div', 't1'); el('b', '', r.n, t1); el('small', '', r.k.replace('_', '.') + ' · ' + r.sec, t1);
     if (r.en) el('div', 'en', r.en);
-    var px = el('div', 'px'); el('b', '', hmPx(m, r.p), px); el('span', hmUD(r.pct), hmChg(m, r.ch, r.p) + ' (' + hmPct(r.pct) + ')', px);
+    var px = el('div', 'px'); el('b', '', hmPx(m, r.p), px); el('span', dvCls(r.pct), hmChg(m, r.ch, r.p) + ' (' + hmPct(r.pct) + ')', px);
     var dl = el('dl'), row = function (k, v, cls) { el('dt', '', k, dl); el('dd', cls || '', v, dl); };
     row('시가총액', hmWon(m, r.cap) + (m !== 'kr' && hmRate(m) ? ' (' + hmMoney(m, r.cap) + ')' : ''));
     row('표시 종목 중 비중', (r.w * 100).toFixed(1) + '%');
-    row('지수 기여', hmPp(r.ctb), hmUD(r.ctb));
+    row('지수 기여', hmPp(r.ctb), dvCls(r.ctb));
     if (r.amt > 0) row('거래대금', (r.est ? '약 ' : '') + hmWon(m, r.amt));
     if (r.vr > 0) row('거래량', '평소 같은 시각의 ' + r.vr.toFixed(2) + '배', r.vr >= 1.5 ? 'up' : '');
     if (r.hi > 0) {
