@@ -44,6 +44,7 @@
   --bad: #d4333b;
   --kr: #b32130; --cn: #a5720f; --jp: #7a4b9a; --us: #2e81cc;
   --on-chip: #ffffff;
+  --xp: #086f69;      /* 선물·옵션 만기 표시 (글자 대비 4.5 이상) */
   --shadow: 0 8px 28px rgba(15, 18, 25, .14), 0 1px 3px rgba(15, 18, 25, .08);
   /* 오름(빨강)·내림(파랑): 시세 글자 q · 차트 c(+이동평균) · 히트맵 9단계 hm (밝기 단계 고르게, 글자 대비 4.5 이상) */
   --q-up: #d4333b; --q-dn: #2d6fd6;
@@ -60,7 +61,7 @@
     --today-bg: #eceef2; --today-fg: #16171b;
     --accent: #72a6ff; --ok: #3ccf6e; --warn: #e3a008; --bad: #ff6b6b;
     --kr: #e15055; --cn: #cc8d16; --jp: #ad6db7; --us: #50a0ee;
-    --on-chip: #121316;
+    --on-chip: #121316; --xp: #45c8bd;
     --shadow: 0 10px 30px rgba(0, 0, 0, .5), 0 1px 3px rgba(0, 0, 0, .4);
     --q-up: #ff6b6b; --q-dn: #72a6ff;
     --c-up: #ef5b60; --c-dn: #4f8ff0; --c-ma1: #9a6c12; --c-ma2: #2fa39c;
@@ -76,7 +77,7 @@
   --today-bg: #eceef2; --today-fg: #16171b;
   --accent: #72a6ff; --ok: #3ccf6e; --warn: #e3a008; --bad: #ff6b6b;
   --kr: #e15055; --cn: #cc8d16; --jp: #ad6db7; --us: #50a0ee;
-  --on-chip: #121316;
+  --on-chip: #121316; --xp: #45c8bd;
   --shadow: 0 10px 30px rgba(0, 0, 0, .5), 0 1px 3px rgba(0, 0, 0, .4);
   --q-up: #ff6b6b; --q-dn: #72a6ff;
   --c-up: #ef5b60; --c-dn: #4f8ff0; --c-ma1: #9a6c12; --c-ma2: #2fa39c;
@@ -216,6 +217,15 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .chip.part { background: color-mix(in srgb, var(--cc) 24%, transparent); }
 .chip.weekend { background: var(--bg3); }
 .chip.big { min-width: 20px; height: 20px; font-size: 12px; border-radius: 5px; }
+/* 선물·옵션 만기: 달력 칸 아래 줄 이름표 '한 만기'·'일 SQ'·'미 만기' (큰 만기 = 테두리+옅은 바탕, 매달 만기 = 가는 테두리) */
+.chip.xp, .xp { box-shadow: inset 0 0 0 1.5px var(--cc); background: color-mix(in srgb, var(--cc) 14%, transparent); color: color-mix(in srgb, var(--cc) 72%, var(--text)); }
+.xp {
+  --cc: var(--muted);
+  display: inline-flex; align-items: center; height: 16px; padding: 0 4px; border-radius: 4px; flex: none;
+  font-size: 10.5px; font-weight: 800; font-style: normal; line-height: 1; letter-spacing: -0.03em; white-space: nowrap;
+}
+.xp[data-c="KR"] { --cc: var(--kr); } .xp[data-c="JP"] { --cc: var(--jp); } .xp[data-c="US"] { --cc: var(--us); }
+.xp.mon { font-weight: 700; background: none; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cc) 60%, transparent); }
 
 /* ── 달력 ── */
 .cal { display: flex; flex-direction: column; min-width: 0; }
@@ -326,11 +336,13 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .tag.part { color: var(--warn); background: color-mix(in srgb, var(--warn) 14%, transparent); }
 .tag.open { color: var(--ok); background: color-mix(in srgb, var(--ok) 12%, transparent); }
 .tag.tent { color: var(--muted); background: transparent; box-shadow: inset 0 0 0 1px var(--line); }
+.tag.xp { color: var(--xp); background: color-mix(in srgb, var(--xp) 13%, transparent); }
 .empty { padding: 18px 6px; color: var(--muted); font-size: 13px; }
 
 .legend { display: flex; flex-wrap: wrap; gap: 4px 12px; padding: 8px 2px 0; border-top: 1px solid var(--line); margin-top: 6px; font-size: 11.5px; color: var(--muted); }
 .legend span { display: inline-flex; align-items: center; gap: 5px; }
 .legend .chip { --cc: var(--text2); min-width: 14px; height: 14px; font-size: 9px; }
+.legend .xp { --cc: var(--text2); height: 14px; padding: 0 3px; font-size: 9px; }
 .legend .more { margin-left: auto; }
 .legend .icon.mini { width: 24px; height: 24px; margin: -4px -4px -4px 0; color: var(--muted); }
 .legend .icon.mini svg { width: 16px; height: 16px; }
@@ -885,9 +897,9 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   <div class="main" id="main">
   <header class="top">
     <div class="title">
-      <button class="icon" id="prev" title="이전 달 (←)" aria-label="이전 달"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button>
+      <button class="icon" id="prev" title="이전 달 (← · 달력 위에서 휠 위로)" aria-label="이전 달"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button>
       <h1 id="monthTitle" class="tabular">&nbsp;</h1>
-      <button class="icon" id="next" title="다음 달 (→)" aria-label="다음 달"><svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></button>
+      <button class="icon" id="next" title="다음 달 (→ · 달력 위에서 휠 아래로)" aria-label="다음 달"><svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></button>
       <button class="today-btn" id="todayBtn" title="이번 달로 (Home)">오늘</button>
       <button class="today-btn hm-open" id="hmBtn" title="히트맵 — 한국·미국·일본 대표 종목을 시가총액(크기)·오늘 등락률(색)로 한눈에"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="10" height="10" rx="1.5"/><rect x="15.5" y="3.5" width="5" height="10" rx="1.5"/><rect x="3.5" y="15.5" width="6" height="5" rx="1.5"/><rect x="11.5" y="15.5" width="9" height="5" rx="1.5"/></svg><span>히트맵</span></button>
     </div>
@@ -941,6 +953,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
       <span><i class="chip part">조</i>조기폐장·시간변경</span>
       <span><i class="chip open">개</i>공휴일·정상개장</span>
       <span><i class="chip tent">예</i>발표 전</span>
+      <span title="선물·옵션 만기 — 한국 둘째 목 · 일본 SQ 둘째 금 · 미국 셋째 금 (설정에서 매달 만기도 켤 수 있음)"><i class="xp">만기</i>선물·옵션 만기</span>
       <span class="more"><button class="icon mini" id="infoBtn" title="데이터 기준 · 출처" aria-label="데이터 기준 · 출처"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg></button></span>
     </div>
   </section>
@@ -1016,6 +1029,12 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
       <section>
         <h4>표시할 나라</h4>
         <div class="seg" id="optCountries"></div>
+      </section>
+      <section>
+        <h4>선물·옵션 만기일 (달력)</h4>
+        <label class="switch">큰 만기 (3·6·9·12월) <input type="checkbox" id="optXpBig"></label>
+        <label class="switch">매달 옵션 만기도 <input type="checkbox" id="optXpMon"></label>
+        <p class="hint">한국 코스피200 = 둘째 목요일 (3·6·9·12월은 선물·옵션 동시만기) · 일본 닛케이225 SQ = 둘째 금요일 (3·6·9·12월 메이저 SQ) · 미국 = 셋째 금요일 (3·6·9·12월 쿼드러플 위칭). 그날이 휴장이면 앞 거래일로 앞당겨 표시합니다. 위 '표시할 나라'에서 끈 나라는 안 보입니다.</p>
       </section>
       <section data-host-block>
         <h4>글자 크기 <span id="zoomNow" style="font-weight:600"></span></h4>
@@ -1174,6 +1193,37 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   function visible() { return ORDER.filter(function (c) { return vis[c]; }); }
   function chip(c, cls, big) {
     return '<i class="chip ' + (cls || '') + (big ? ' big' : '') + '" data-c="' + c + '">' + D.countries[c].short + '</i>';
+  }
+
+  /* ── 선물·옵션 만기일: data.js expiry 규칙(그 달 몇째 무슨 요일) → 날짜, 그날 휴장이면 앞 거래일로 앞당김 ── */
+  var XP = D.expiry || {};
+  var xpOn = { big: store.get('xpBig', true) !== false, mon: store.get('xpMon', false) === true };
+  var xpByDay = {};                                    // 'YYYY-MM-DD' → [{ c, big, r, from(앞당기기 전 날) }]
+  (function () {
+    var y = +D.from.slice(0, 4), m = +D.from.slice(5, 7);
+    while (key(y, m, 1).slice(0, 7) <= D.to) {
+      Object.keys(XP).forEach(function (c) {
+        var r = XP[c], w1 = new Date(y, m - 1, 1).getDay();
+        var k = key(y, m, 1 + (r.wd - w1 + 7) % 7 + (r.nth - 1) * 7), from = '';
+        for (var i = 0; i < 7 && /^(closed|tent|weekend)$/.test(dayState(c, k).state); i++) { from = from || k; k = addDayKey(k, -1); }
+        (xpByDay[k] = xpByDay[k] || []).push({ c: c, big: r.big.indexOf(m) >= 0, r: r, from: from });
+      });
+      if (++m > 12) { m = 1; y++; }
+    }
+  })();
+  function xpOf(k) {                                   // 그날 보일 만기 (표시할 나라 · 설정 켠 것만)
+    return (xpByDay[k] || []).filter(function (x) { return vis[x.c] && (x.big ? xpOn.big : xpOn.mon); });
+  }
+  function xpInfo(x, k) {                              // 풍선·목록 글: 이름 · 원래 이름 · 설명 · 표
+    var r = x.r, d = [];
+    if (x.big && r.bd) {
+      var t = '';
+      if (r.et) { try { var p = partsIn(TZ.KR, instantAt(TZ[x.c], k, r.et)); t = ' (한국 ' + pad(p.h) + ':' + pad(p.mi) + ')'; } catch (e) {} }
+      d.push(r.bd + t);
+    }
+    if (r.d) d.push(r.d);
+    if (x.from) d.push('원래 ' + mdw(x.from) + ' — 휴장이라 앞당김');
+    return { name: x.big ? r.bn : r.mn, alt: (x.big ? r.bo : r.mo) || '', desc: d.join(' · '), tag: x.big ? '큰 만기' : '월 만기' };
   }
 
   /* ── 시간대 (거래소 현지 날짜·시각) ── */
@@ -1436,6 +1486,8 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
         chips = cs.map(function (c) {
           var s = dayState(c, k), cl = CHIP[s.state];
           return cl ? chip(c, cl) : '';
+        }).join('') + xpOf(k).map(function (x) {      // 선물·옵션 만기 '한 만기' · '일 SQ' · '미 만기'
+          return '<i class="xp ' + (x.big ? 'big' : 'mon') + '" data-c="' + x.c + '">' + D.countries[x.c].short + ' ' + esc(x.r.cell) + '</i>';
         }).join('');
       }
       html += '<div class="' + cls.join(' ') + '" data-k="' + k + '"' + (inMonth ? '' : ' data-out="1"') + '>' +
@@ -1459,11 +1511,16 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
       if (!r) { r = map[gk] = { c: ev.c, evs: [], days: [] }; rows.push(r); }
       r.evs.push(ev); r.days = r.days.concat(ds);
     });
+    for (var d = 1, n = new Date(y, m, 0).getDate(); d <= n; d++) {      // 선물·옵션 만기 (날마다 한 줄)
+      var xk = key(y, m, d);
+      xpOf(xk).forEach(function (x) { rows.push({ c: x.c, xp: x, evs: [], days: [xk] }); });
+    }
     rows.forEach(function (r) { r.days.sort(); r.s = r.days[0]; r.e = r.days[r.days.length - 1]; });
     rows.sort(function (p, q) { return p.s < q.s ? -1 : p.s > q.s ? 1 : ORDER.indexOf(p.c) - ORDER.indexOf(q.c); });
     return rows;
   }
   function rowInfo(r) {
+    if (r.xp) { var f = xpInfo(r.xp, r.s); return { title: f.name, orig: f.alt, desc: f.desc, tag: ['xp', f.tag], chip: 'xp', dv: '' }; }
     var evs = r.evs, one = evs.length === 1, e0 = evs[0];
     var gname = evs.filter(function (e) { return e.gn; })[0];
     var title = one ? e0.n : (gname ? gname.gn : e0.n);
@@ -1521,6 +1578,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
       return;
     }
     var rows = monthRows(y, m);
+    if (rows.some(function (r) { return r.xp; })) $('listTitle').textContent = m + '월 휴장 · 휴일 · 만기';
     $('listCount').textContent = rows.length ? rows.length + '건' : '';
     if (!rows.length) { $('list').innerHTML = '<div class="empty">이번 달은 휴장·휴일이 없습니다.</div>'; return; }
     $('list').innerHTML = rows.map(function (r) {
@@ -1570,6 +1628,12 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
           (ev.o ? '<span class="t-orig" lang="' + LANG[c] + '">' + esc(ev.o) + '</span>' : '') +
           (d ? '<div class="t-desc">' + esc(d) + '</div>' : '') + '</div><span class="tag ' + st[0] + '">' + st[1] + '</span></div>');
       });
+    });
+    xpOf(k).forEach(function (x) {                     // 선물·옵션 만기
+      var f = xpInfo(x, k);
+      rows.push('<div class="t-row">' + chip(x.c, 'xp') + '<div><span class="t-name">' + esc(f.name) + '</span>' +
+        (f.alt ? '<span class="t-orig" lang="' + LANG[x.c] + '">' + esc(f.alt) + '</span>' : '') +
+        '<div class="t-desc">' + esc(f.desc) + '</div></div><span class="tag xp">' + f.tag + '</span></div>');
     });
     var mm = memoOf(k), memo = '';
     if (edit) memo = '<div class="t-memo"><textarea id="memoTa" rows="3" maxlength="300" placeholder="메모 (예: FOMC, 실적 발표) — 쓰면 바로 저장" aria-label="' +
@@ -1641,6 +1705,27 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 
   $('prev').onclick = function () { go(0, -1); };
   $('next').onclick = function () { go(0, 1); };
+  // 달력·달 제목 위 마우스 휠 → 이전·다음 달 (아래로 굴리면 다음 달). Ctrl+휠은 글자 크기라 건너뜀
+  //   마우스: 한 칸에 한 달 (계속 굴리면 0.3초에 한 달까지) · 트랙패드: 한 번 쓸면 한 달 (관성으로 더 넘어가지 않게)
+  var wh = { acc: 0, ev: -1e9, go: -1e9, fresh: true };
+  function calWheel(e) {
+    if (e.ctrlKey || e.metaKey) return;
+    var d = Math.abs(e.deltaY) >= Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
+    if (e.deltaMode === 1) d *= 40; else if (e.deltaMode === 2) d *= 400;
+    if (!d) return;
+    e.preventDefault();
+    var now = e.timeStamp || performance.now();
+    if (now - wh.ev > 200) { wh.acc = 0; wh.fresh = true; }                    // 잠깐 멈췄다 새로 굴림
+    wh.ev = now;
+    if (!wh.fresh && !(Math.abs(d) >= 50 && now - wh.go > 300)) return;       // 같은 동작의 관성 꼬리는 무시
+    if (wh.acc && (wh.acc > 0) !== (d > 0)) wh.acc = 0;
+    wh.acc += d;
+    if (Math.abs(wh.acc) < 40) return;
+    go(0, wh.acc > 0 ? 1 : -1);
+    wh.acc = 0; wh.fresh = false; wh.go = now;
+  }
+  document.querySelector('.cal').addEventListener('wheel', calWheel, { passive: false });
+  $('monthTitle').addEventListener('wheel', calWheel, { passive: false });
   $('todayBtn').onclick = goToday;
   $('status').addEventListener('click', function (e) {
     var b = e.target.closest('.st'); if (!b) return;
@@ -1763,6 +1848,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     $('optTheme').innerHTML = THEMES.map(function (t) { return '<button data-t="' + t[0] + '" class="' + (theme === t[0] ? 'on' : '') + '">' + t[1] + '</button>'; }).join('');
     $('optPin').checked = !!hostState.pin;
     $('optClock').checked = !!clockOn;
+    $('optXpBig').checked = xpOn.big; $('optXpMon').checked = xpOn.mon;
     $('optQuotes').checked = !!qOn;
     $('optNews').checked = !!news.on;
     $('optNewsTr').checked = !!tr.on; $('optNewsTrO').checked = !!tr.orig; trUi();
@@ -1802,6 +1888,8 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   $('optAuto').onchange = function () { send({ type: 'autostart', value: this.checked }); };
   $('optReset').onclick = function () { send({ type: 'resetPosition' }); closeSheet(); };
   $('optClock').onchange = function () { clockOn = this.checked; store.set('clock', clockOn); applyClock(); };
+  $('optXpBig').onchange = function () { xpOn.big = this.checked; store.set('xpBig', xpOn.big); renderGrid(); renderList(); };
+  $('optXpMon').onchange = function () { xpOn.mon = this.checked; store.set('xpMon', xpOn.mon); renderGrid(); renderList(); };
   $('optQuotes').onchange = function () { qOn = this.checked; store.set('quotes', qOn); applyQuotes(!!host); };
   $('optQEdit').onclick = function () {
     closeSheet();
