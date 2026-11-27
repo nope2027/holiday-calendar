@@ -226,6 +226,12 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 }
 .xp[data-c="KR"] { --cc: var(--kr); } .xp[data-c="JP"] { --cc: var(--jp); } .xp[data-c="US"] { --cc: var(--us); }
 .xp.mon { font-weight: 700; background: none; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cc) 60%, transparent); }
+/* FOMC: 결정일 칸에 점 + 작은 글자만 (테두리·바탕 없이 — 눈에 덜 띄게) */
+.fm { display: inline-flex; align-items: center; gap: 3px; height: 16px; padding: 0 2px; flex: none; font-size: 9.5px; font-weight: 800; font-style: normal; letter-spacing: .03em; line-height: 1; color: color-mix(in srgb, var(--us) 72%, var(--text)); }
+.fm::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+.fm.nd { color: var(--muted); font-weight: 700; }
+.fm.nd::before { background: none; box-shadow: inset 0 0 0 1px currentColor; }
+.chip.fomc { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cc) 55%, transparent); color: color-mix(in srgb, var(--cc) 72%, var(--text)); }
 
 /* ── 달력 ── */
 .cal { display: flex; flex-direction: column; min-width: 0; }
@@ -337,6 +343,8 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .tag.open { color: var(--ok); background: color-mix(in srgb, var(--ok) 12%, transparent); }
 .tag.tent { color: var(--muted); background: transparent; box-shadow: inset 0 0 0 1px var(--line); }
 .tag.xp { color: var(--xp); background: color-mix(in srgb, var(--xp) 13%, transparent); }
+.tag.fomc { color: color-mix(in srgb, var(--us) 72%, var(--text)); background: color-mix(in srgb, var(--us) 13%, transparent); }
+.tag.fomc.nd { color: var(--muted); background: transparent; box-shadow: inset 0 0 0 1px var(--line); }
 .empty { padding: 18px 6px; color: var(--muted); font-size: 13px; }
 
 .legend { display: flex; flex-wrap: wrap; gap: 4px 12px; padding: 8px 2px 0; border-top: 1px solid var(--line); margin-top: 6px; font-size: 11.5px; color: var(--muted); }
@@ -1031,10 +1039,12 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
         <div class="seg" id="optCountries"></div>
       </section>
       <section>
-        <h4>선물·옵션 만기일 (달력)</h4>
+        <h4>달력 일정 (선물·옵션 만기 · FOMC)</h4>
         <label class="switch">큰 만기 (3·6·9·12월) <input type="checkbox" id="optXpBig"></label>
         <label class="switch">매달 옵션 만기도 <input type="checkbox" id="optXpMon"></label>
+        <label class="switch">FOMC 금리 결정일 <input type="checkbox" id="optFomc"></label>
         <p class="hint">한국 코스피200 = 둘째 목요일 (3·6·9·12월은 선물·옵션 동시만기) · 일본 닛케이225 SQ = 둘째 금요일 (3·6·9·12월 메이저 SQ) · 미국 = 셋째 금요일 (3·6·9·12월 쿼드러플 위칭). 그날이 휴장이면 앞 거래일로 앞당겨 표시합니다. 위 '표시할 나라'에서 끈 나라는 안 보입니다.</p>
+        <p class="hint">FOMC = 미국 연준 회의 둘째 날(미국 날짜)에 '● FOMC'. 결과 발표 14:00 ET = 한국 다음 날 새벽 3시(미국 서머타임)·4시. 날짜에 마우스를 올리면 한국 시각·점도표 여부가 나옵니다.</p>
       </section>
       <section data-host-block>
         <h4>글자 크기 <span id="zoomNow" style="font-weight:600"></span></h4>
@@ -1224,6 +1234,25 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     if (r.d) d.push(r.d);
     if (x.from) d.push('원래 ' + mdw(x.from) + ' — 휴장이라 앞당김');
     return { name: x.big ? r.bn : r.mn, alt: (x.big ? r.bo : r.mo) || '', desc: d.join(' · '), tag: x.big ? '큰 만기' : '월 만기' };
+  }
+
+  /* ── FOMC: data.js fomc — 회의 둘째 날(결정일, 미국 날짜)에 표시, 결과 14:00 ET ── */
+  var fomcOn = store.get('fomc', true) !== false;
+  var fomcByDay = {};
+  (D.fomc || []).forEach(function (f) { if (f && f.e) fomcByDay[f.e] = f; });
+  function fomcOf(k) { return fomcOn ? fomcByDay[k] || null : null; }
+  function fomcInfo(f) {
+    var d = [], a = fromKey(f.s || f.e), b = fromKey(f.e);
+    if (f.nd) d.push('금리 결정 없음 — 통화정책 전략만 논의');
+    else {
+      var kt = function (hm) { var p = partsIn(TZ.KR, instantAt(TZ.US, f.e, hm)); return { d: mdw(p.key), t: pad(p.h) + ':' + pad(p.mi) }; };
+      try { var r1 = kt('14:00'), r2 = kt('14:30'); d.push('한국 ' + r1.d + ' ' + r1.t + ' 결과 발표 (14:00 ET)', '의장 기자회견 ' + r2.t); }
+      catch (e) { d.push('결과 발표 14:00 ET', '의장 기자회견 14:30 ET'); }
+      if (f.sep) d.push('점도표(경제전망) 함께');
+    }
+    d.push('회의 ' + (a.getMonth() + 1) + '/' + a.getDate() + '~' + (a.getMonth() === b.getMonth() ? '' : (b.getMonth() + 1) + '/') + b.getDate());
+    if (f.t) d.push('연준 잠정 일정');
+    return { name: f.nd ? 'FOMC 전략 회의' : 'FOMC 금리 결정', alt: '연준', desc: d.join(' · '), tag: f.nd ? '결정 없음' : '금리 결정' };
   }
 
   /* ── 시간대 (거래소 현지 날짜·시각) ── */
@@ -1490,6 +1519,8 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
           return '<i class="xp ' + (x.big ? 'big' : 'mon') + '" data-c="' + x.c + '">' + D.countries[x.c].short + ' ' + esc(x.r.cell) + '</i>';
         }).join('');
       }
+      var fo = inMonth && fomcOf(k);
+      if (fo) chips += '<i class="fm' + (fo.nd ? ' nd' : '') + '">FOMC</i>';
       html += '<div class="' + cls.join(' ') + '" data-k="' + k + '"' + (inMonth ? '' : ' data-out="1"') + '>' +
         '<span class="n num">' + dt.getDate() + '</span>' +
         (mm && !lbl ? '<span class="lbl memo">' + esc(mm.split('\n')[0]) + '</span>' : '<span class="lbl">' + esc(lbl) + '</span>') +
@@ -1514,6 +1545,8 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     for (var d = 1, n = new Date(y, m, 0).getDate(); d <= n; d++) {      // 선물·옵션 만기 (날마다 한 줄)
       var xk = key(y, m, d);
       xpOf(xk).forEach(function (x) { rows.push({ c: x.c, xp: x, evs: [], days: [xk] }); });
+      var xf = fomcOf(xk);
+      if (xf) rows.push({ c: 'US', fomc: xf, evs: [], days: [xk] });
     }
     rows.forEach(function (r) { r.days.sort(); r.s = r.days[0]; r.e = r.days[r.days.length - 1]; });
     rows.sort(function (p, q) { return p.s < q.s ? -1 : p.s > q.s ? 1 : ORDER.indexOf(p.c) - ORDER.indexOf(q.c); });
@@ -1521,6 +1554,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   }
   function rowInfo(r) {
     if (r.xp) { var f = xpInfo(r.xp, r.s); return { title: f.name, orig: f.alt, desc: f.desc, tag: ['xp', f.tag], chip: 'xp', dv: '' }; }
+    if (r.fomc) { var g = fomcInfo(r.fomc); return { title: g.name, orig: g.alt, desc: g.desc, tag: ['fomc' + (r.fomc.nd ? ' nd' : ''), g.tag], chip: 'fomc', dv: '' }; }
     var evs = r.evs, one = evs.length === 1, e0 = evs[0];
     var gname = evs.filter(function (e) { return e.gn; })[0];
     var title = one ? e0.n : (gname ? gname.gn : e0.n);
@@ -1578,7 +1612,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
       return;
     }
     var rows = monthRows(y, m);
-    if (rows.some(function (r) { return r.xp; })) $('listTitle').textContent = m + '월 휴장 · 휴일 · 만기';
+    $('listTitle').textContent = m + '월 휴장 · 휴일' + (rows.some(function (r) { return r.xp; }) ? ' · 만기' : '') + (rows.some(function (r) { return r.fomc; }) ? ' · FOMC' : '');
     $('listCount').textContent = rows.length ? rows.length + '건' : '';
     if (!rows.length) { $('list').innerHTML = '<div class="empty">이번 달은 휴장·휴일이 없습니다.</div>'; return; }
     $('list').innerHTML = rows.map(function (r) {
@@ -1635,6 +1669,12 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
         (f.alt ? '<span class="t-orig" lang="' + LANG[x.c] + '">' + esc(f.alt) + '</span>' : '') +
         '<div class="t-desc">' + esc(f.desc) + '</div></div><span class="tag xp">' + f.tag + '</span></div>');
     });
+    var fo = fomcOf(k);
+    if (fo) {
+      var fi = fomcInfo(fo);
+      rows.push('<div class="t-row">' + chip('US', 'fomc') + '<div><span class="t-name">' + esc(fi.name) + '</span><span class="t-orig">' + esc(fi.alt) + '</span>' +
+        '<div class="t-desc">' + esc(fi.desc) + '</div></div><span class="tag fomc' + (fo.nd ? ' nd' : '') + '">' + fi.tag + '</span></div>');
+    }
     var mm = memoOf(k), memo = '';
     if (edit) memo = '<div class="t-memo"><textarea id="memoTa" rows="3" maxlength="300" placeholder="메모 (예: FOMC, 실적 발표) — 쓰면 바로 저장" aria-label="' +
       (dt.getMonth() + 1) + '월 ' + dt.getDate() + '일 메모">' + esc(mm) + '</textarea><div class="t-mbar"><span>이 기기에만 저장 · 바깥을 누르면 닫힘</span>' +
@@ -1848,7 +1888,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     $('optTheme').innerHTML = THEMES.map(function (t) { return '<button data-t="' + t[0] + '" class="' + (theme === t[0] ? 'on' : '') + '">' + t[1] + '</button>'; }).join('');
     $('optPin').checked = !!hostState.pin;
     $('optClock').checked = !!clockOn;
-    $('optXpBig').checked = xpOn.big; $('optXpMon').checked = xpOn.mon;
+    $('optXpBig').checked = xpOn.big; $('optXpMon').checked = xpOn.mon; $('optFomc').checked = fomcOn;
     $('optQuotes').checked = !!qOn;
     $('optNews').checked = !!news.on;
     $('optNewsTr').checked = !!tr.on; $('optNewsTrO').checked = !!tr.orig; trUi();
@@ -1890,6 +1930,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   $('optClock').onchange = function () { clockOn = this.checked; store.set('clock', clockOn); applyClock(); };
   $('optXpBig').onchange = function () { xpOn.big = this.checked; store.set('xpBig', xpOn.big); renderGrid(); renderList(); };
   $('optXpMon').onchange = function () { xpOn.mon = this.checked; store.set('xpMon', xpOn.mon); renderGrid(); renderList(); };
+  $('optFomc').onchange = function () { fomcOn = this.checked; store.set('fomc', fomcOn); renderGrid(); renderList(); };
   $('optQuotes').onchange = function () { qOn = this.checked; store.set('quotes', qOn); applyQuotes(!!host); };
   $('optQEdit').onclick = function () {
     closeSheet();
