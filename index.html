@@ -4199,8 +4199,13 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
         '<span class="hm-br" title="오른 종목 ' + st.up + ' · 그대로 ' + st.fl + ' · 내린 종목 ' + st.dn + '"><span class="up">▲' + st.up + '</span><span class="hm-brbar">' +
         (st.up ? '<i class="u" style="width:' + wd(st.up) + '"></i>' : '') + (st.fl ? '<i class="f" style="width:' + wd(st.fl) + '"></i>' : '') + (st.dn ? '<i class="d" style="width:' + wd(st.dn) + '"></i>' : '') +
         '</span><span class="dn">▼' + st.dn + '</span></span>';
-      var fail = hm.failAt[m] && d && hm.failAt[m] > d.at;
-      if (st.t || fail) h += '<span class="hm-tm' + (fail ? ' warn' : '') + '">' + (fail ? '업데이트 실패 · 잠시 뒤 다시 · ' : '') + (st.t ? kstShort(st.t, now) + ' 기준' : '') + '</span>';
+      var fail = hm.failAt[m] && d && hm.failAt[m] > d.at, cs = cashState(HM_MK[m].c, now), lag = '';
+      if (st.t && cs.st === 'open') {          // 장중인데 자료 시각이 늦으면 그대로 알림 (무료 시세: 한국·일본 종목은 보통 20분쯤 늦음)
+        var mins = Math.round((now - st.t) / 6e4);
+        lag = st.t < cs.o ? ' · 오늘 시세 아직 안 들어옴' : mins >= 5 ? ' · 약 ' + mins + '분 지연' : '';
+      }
+      if (st.t || fail) h += '<span class="hm-tm' + (fail || lag ? ' warn' : '') + '" title="무료 공개 시세라 늦을 수 있음 (지수는 거의 실시간)">' + (fail ? '업데이트 실패 · 잠시 뒤 다시 · ' : '') +
+        (st.t ? kstShort(st.t, now) + ' 기준' : '') + lag + '</span>';
     }
     return h;
   }
@@ -4372,7 +4377,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
       h += '<span style="left:calc((100% - 16px) * ' + t[1] / 9 + ' + ' + (t[1] - 0.5) * 2 + 'px)">' + t[0] + '</span>';
     });
     $('hmLeg').innerHTML = h + '</span>';
-    $('hmSrc').textContent = '자료: 텐센트 증권(한국·일본·지수) · 동방재부(미국) · 몇 초~몇 분 늦을 수 있음 · 대표 종목만 · 금액은 원화 환산(환율 카드와 같은 환율) · 칸 크기는 작은 종목도 보이게 시가총액을 완만하게 줄여 그림';
+    $('hmSrc').textContent = '자료: 텐센트 증권(한국·일본·지수) · 동방재부(미국) · 무료 공개 시세라 늦을 수 있음 (한국·일본 종목은 보통 약 20분 — 늦으면 위에 표시, 지수는 거의 실시간) · 대표 종목만 · 금액은 원화 환산(환율 카드와 같은 환율) · 칸 크기는 작은 종목도 보이게 시가총액을 완만하게 줄여 그림';
   })();
   $('hmBtn').onclick = hmOpen;
   $('hmBtnQ').onclick = hmOpen;
