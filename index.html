@@ -45,6 +45,7 @@
   --kr: #b32130; --cn: #a5720f; --jp: #7a4b9a; --us: #2e81cc;
   --on-chip: #ffffff;
   --xp: #086f69;      /* 선물·옵션 만기 표시 (글자 대비 4.5 이상) */
+  --neon: #9a5d00; --neon-glow: none;   /* 시세 패널 제목 '24시간' 금색 (어두운 화면은 은은하게 빛남) */
   --shadow: 0 8px 28px rgba(15, 18, 25, .14), 0 1px 3px rgba(15, 18, 25, .08);
   /* 오름(빨강)·내림(파랑): 시세 글자 q · 차트 c(+이동평균) · 히트맵 9단계 hm (밝기 단계 고르게, 글자 대비 4.5 이상) */
   --q-up: #d4333b; --q-dn: #2d6fd6;
@@ -61,7 +62,7 @@
     --today-bg: #eceef2; --today-fg: #16171b;
     --accent: #72a6ff; --ok: #3ccf6e; --warn: #e3a008; --bad: #ff6b6b;
     --kr: #e15055; --cn: #cc8d16; --jp: #ad6db7; --us: #50a0ee;
-    --on-chip: #121316; --xp: #45c8bd;
+    --on-chip: #121316; --xp: #45c8bd; --neon: #f0b429; --neon-glow: 0 0 10px rgba(240, 180, 41, .45);
     --shadow: 0 10px 30px rgba(0, 0, 0, .5), 0 1px 3px rgba(0, 0, 0, .4);
     --q-up: #ff6b6b; --q-dn: #72a6ff;
     --c-up: #ef5b60; --c-dn: #4f8ff0; --c-ma1: #9a6c12; --c-ma2: #2fa39c;
@@ -77,7 +78,7 @@
   --today-bg: #eceef2; --today-fg: #16171b;
   --accent: #72a6ff; --ok: #3ccf6e; --warn: #e3a008; --bad: #ff6b6b;
   --kr: #e15055; --cn: #cc8d16; --jp: #ad6db7; --us: #50a0ee;
-  --on-chip: #121316; --xp: #45c8bd;
+  --on-chip: #121316; --xp: #45c8bd; --neon: #f0b429; --neon-glow: 0 0 10px rgba(240, 180, 41, .45);
   --shadow: 0 10px 30px rgba(0, 0, 0, .5), 0 1px 3px rgba(0, 0, 0, .4);
   --q-up: #ff6b6b; --q-dn: #72a6ff;
   --c-up: #ef5b60; --c-dn: #4f8ff0; --c-ma1: #9a6c12; --c-ma2: #2fa39c;
@@ -422,9 +423,20 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 }
 .quotes[hidden], .quotes.collapsed { display: none; }
 .q-top { display: flex; align-items: center; gap: 6px; height: 40px; flex: none; }
-.q-top h2 { margin: 0; font-size: 15.5px; font-weight: 700; letter-spacing: -0.01em; white-space: nowrap; }
-.q-live { margin-left: auto; font-size: 11.5px; font-weight: 600; color: var(--muted); display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; font-variant-numeric: tabular-nums; }
-.q-live::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--muted); }
+.q-top h2 { margin: 0; display: flex; align-items: center; gap: 7px; min-width: 0; font-size: 15.5px; font-weight: 700; letter-spacing: -0.01em; white-space: nowrap; }
+/* 패널 제목 '도박장은 24시간 열려있다' — 살짝 기운 주사위 + 두 줄 간판 */
+.q-dice { width: 21px; height: 21px; flex: none; color: var(--neon); transform: rotate(-10deg); }
+.q-dice rect { fill: none; stroke: currentColor; stroke-width: 1.8; }
+.q-dice circle { fill: currentColor; }
+.q-tt { display: flex; flex-direction: column; line-height: 1.12; min-width: 0; }
+.q-tt small { font-size: 10.5px; font-weight: 600; color: var(--muted); letter-spacing: .04em; }
+.q-tt b { font-size: 15.5px; font-weight: 800; letter-spacing: -0.02em; }
+.q-tt em { font-style: normal; color: var(--neon); text-shadow: var(--neon-glow); }
+/* 연결 상태: 제목처럼 두 줄 — '● 실시간' 위, 받은 시각 아래 (긴 '10초마다'·'연결 안 됨'도 제목과 안 겹치게) */
+.q-live { margin-left: auto; font-size: 11.5px; font-weight: 600; color: var(--muted); display: grid; grid-template-columns: auto auto; column-gap: 5px; row-gap: 1px; align-items: center; justify-items: end; line-height: 1.15; white-space: nowrap; font-variant-numeric: tabular-nums; flex: none; }
+.q-live::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--muted); grid-row: 1; grid-column: 1; }
+.q-live .ql-s { grid-row: 1; grid-column: 2; }
+.q-live .ql-t { grid-row: 2; grid-column: 1 / 3; font-size: 10.5px; opacity: .85; }
 .q-live.live::before { background: var(--ok); }
 .q-live.poll::before { background: var(--warn); }
 .q-live.err::before { background: var(--bad); }
@@ -892,7 +904,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 <body>
 <div class="app" id="app">
   <aside class="quotes" id="quotes" hidden>
-    <div class="q-top"><h2>24시간 시세</h2><span class="q-live" id="qLive">연결 중</span><button class="today-btn hm-open" id="hmBtnQ" title="히트맵 — 한국·미국·일본"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="10" height="10" rx="1.5"/><rect x="15.5" y="3.5" width="5" height="10" rx="1.5"/><rect x="3.5" y="15.5" width="6" height="5" rx="1.5"/><rect x="11.5" y="15.5" width="9" height="5" rx="1.5"/></svg><span>히트맵</span></button></div>
+    <div class="q-top"><h2 aria-label="도박장은 24시간 열려있다" title="24시간 시세 — 지수 선물·종목은 주말에도 움직이는 무기한 선물, 증시 지수는 장 시간에만"><svg class="q-dice" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="4.5"/><circle cx="8.6" cy="8.6" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="15.4" cy="15.4" r="1.5"/></svg><span class="q-tt"><small>도박장은</small><b><em>24시간</em> 열려있다</b></span></h2><span class="q-live" id="qLive"><span class="ql-s">연결 중</span></span><button class="today-btn hm-open" id="hmBtnQ" title="히트맵 — 한국·미국·일본"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="10" height="10" rx="1.5"/><rect x="15.5" y="3.5" width="5" height="10" rx="1.5"/><rect x="3.5" y="15.5" width="6" height="5" rx="1.5"/><rect x="11.5" y="15.5" width="9" height="5" rx="1.5"/></svg><span>히트맵</span></button></div>
     <div class="q-tabs" id="qTabs" role="tablist" aria-label="시세 묶음"></div>
     <div class="q-body" id="qBody"></div>
     <div class="fx" id="qFx">
@@ -1057,7 +1069,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
         <p class="hint">창 가장자리나 오른쪽 아래 모서리를 끌면 크기를 마음대로 바꿀 수 있습니다. 너비가 넓으면 자동으로 가로형이 됩니다.</p>
       </section>
       <section>
-        <h4>24시간 시세 (왼쪽)</h4>
+        <h4>도박장은 24시간 열려있다 (왼쪽 시세)</h4>
         <label class="switch">시세 보이기 <input type="checkbox" id="optQuotes"></label>
         <div class="seg" style="margin-top:4px"><button id="optQEdit">종목 추가 · 편집</button></div>
         <p class="hint">탭(전체·한국·미국·일본)마다 종목·ETF를 따로 넣을 수 있습니다. 증시 지수(코스피·나스닥·니케이·항셍·DAX 등 세계 증시 34개 — 편집 화면 '세계 증시'에서 눌러서 넣기·빼기)는 거래소 장 시간에만 움직이고 줄마다 장 상태(장중·점심·마감·휴장)를 보여 줍니다(텐센트 증권·동방재부 공개 시세). 지수 선물·종목은 24시간 무기한 선물(실제 거래소 시세와 다르고 주말에도 움직임), 환율(원/달러·원/엔·원/위안·달러/엔)은 Coinbase 공개 환율(1분마다)입니다.</p>
@@ -2517,9 +2529,10 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     var el = $('qLive');
     el.className = 'q-live ' + ({ live: 'live', poll: 'poll', err: 'err' }[qMode] || '');
     var t = qLastT ? partsIn(TZ.KR, qLastT) : null;
-    if (!qAllBases().length) { el.className = 'q-live'; el.textContent = '종목 없음'; el.title = ''; return; }
-    el.textContent = ({ live: '실시간', poll: '10초마다', err: '연결 안 됨' }[qMode] || '연결 중') +
-      (t ? ' · ' + pad(t.h) + ':' + pad(t.mi) + ':' + pad(t.s) : '');
+    var set = function (h, al) { if (el._h !== h) { el.innerHTML = h; el._h = h; el.setAttribute('aria-label', al); } };   // 바뀐 때만 씀
+    if (!qAllBases().length) { el.className = 'q-live'; set('<span class="ql-s">종목 없음</span>', '종목 없음'); el.title = ''; return; }
+    var st = { live: '실시간', poll: '10초마다', err: '연결 안 됨' }[qMode] || '연결 중', tm = t ? pad(t.h) + ':' + pad(t.mi) + ':' + pad(t.s) : '';
+    set('<span class="ql-s">' + st + '</span>' + (tm ? '<span class="ql-t">' + tm + '</span>' : ''), st + (tm ? ' · ' + tm : ''));   // 두 줄: 상태 · 받은 시각
     el.title = { live: '바이낸스 실시간 연결 (WebSocket)', poll: '실시간 연결이 안 되어 10초마다 새로 받는 중', err: '바이낸스에 연결하지 못했습니다' }[qMode] || '';
   }
   function qStatusSoon() { if (!qStT) qStT = setTimeout(function () { qStT = 0; qStatus(); }, 250); }
