@@ -707,6 +707,10 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   .qd-tbl th, .qd-tbl td { padding-left: 3px; padding-right: 3px; }
   .qd-tbl td small { display: block; margin: 1px 0 0; }
 }
+@container (max-width: 380px) {                 /* 좁은 표(위젯 기본·휴대폰): 고가·저가까지 6칸이 가로로 넘치지 않게 */
+  .qd-tbl { font-size: 12.5px; }
+  .qd-tbl th, .qd-tbl td { padding-left: 2px; padding-right: 2px; }
+}
 /* 낮은 창(휴대폰 가로 등): 화면 전체를 스크롤 */
 @media (max-height: 560px) and (max-aspect-ratio: 5/4), (max-height: 420px) {
   .qd { overflow-y: auto; }
