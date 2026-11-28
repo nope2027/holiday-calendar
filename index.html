@@ -461,15 +461,31 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .fx .fx-c.up { color: var(--q-up); } .fx .fx-c.dn { color: var(--q-dn); }
 
 /* 탭: 전체 / 한국 / 미국 / 일본 */
-.q-tabs { flex: none; display: flex; gap: 2px; margin: 2px 0 2px; padding: 3px; background: var(--bg2); border-radius: 10px; }
+.q-tabs { flex: none; display: flex; gap: 2px; margin: 10px 0 2px; padding: 3px; background: var(--bg2); border-radius: 10px; }   /* 위 제목과 사이를 넉넉히 (2026-11-28) */
 .q-tabs button { flex: 1; height: 28px; border-radius: 7px; font-size: 13px; font-weight: 600; color: var(--muted); white-space: nowrap; }
 .q-tabs button:hover { color: var(--text); }
 .q-tabs button.on { background: var(--bg); color: var(--text); font-weight: 700; box-shadow: 0 1px 3px rgba(15, 18, 25, .12); }
 
 .q-body { flex: 1; min-height: 0; overflow-y: auto; margin: 0 -6px; padding: 0 6px; scrollbar-width: thin; scrollbar-color: var(--bg3) transparent; }
-.q-grp { margin: 10px 0 3px; font-size: 12px; font-weight: 700; color: var(--muted); display: flex; justify-content: space-between; gap: 8px; }
+/* 묶음 제목 (증시 지수 · 지수 선물 · 원화 · 달러): 누르면 접기·펼치기 — 탭마다 기억, 접으면 오른쪽에 오른·내린 개수 */
+.q-grp { width: calc(100% + 12px); margin: 6px -6px 0; padding: 4px 6px 3px; border-radius: 7px; font-size: 12px; font-weight: 700; color: var(--muted);
+  display: flex; align-items: center; justify-content: space-between; gap: 8px; text-align: left; }
+.q-grp:hover { background: var(--bg2); color: var(--text2); }
 .q-grp .r { font-weight: 600; }
-.q-body > .q-grp:first-child, .q-body > .q-ed-head:first-child { margin-top: 8px; }
+.q-grp .l { display: inline-flex; align-items: center; gap: 3px; min-width: 0; white-space: nowrap; }
+.q-grp .l > span { overflow: hidden; text-overflow: ellipsis; }
+.q-grp .l svg { width: 13px; height: 13px; flex: none; margin-left: -2px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; transition: transform .15s; }
+.q-grp.fold { margin-top: 5px; padding: 5px 6px; background: var(--bg2); color: var(--text2); }
+.q-grp.fold:hover { background: var(--bg3); }
+.q-grp.fold .l svg { transform: rotate(-90deg); }
+.q-grp .n { flex: none; margin-left: 3px; min-width: 18px; height: 16px; padding: 0 5px; border-radius: 8px; background: var(--bg); font-size: 11px; line-height: 16px; text-align: center; color: var(--muted); font-variant-numeric: tabular-nums; }
+.q-sum { flex: none; display: inline-flex; gap: 7px; font-size: 12px; font-variant-numeric: tabular-nums; }
+.q-sum .up { color: var(--q-up); } .q-sum .dn { color: var(--q-dn); } .q-sum .fl { color: var(--muted); font-weight: 600; }
+.q-gl.q-in { animation: q-in .18s ease-out; }
+@keyframes q-in { from { opacity: 0; transform: translateY(-4px); } }
+@media (prefers-reduced-motion: reduce) { .q-gl.q-in { animation: none; } .q-grp .l svg { transition: none; } }
+.q-body > .q-grp:first-child { margin-top: 4px; }
+.q-body > .q-ed-head:first-child { margin-top: 8px; }
 .q-row { display: grid; grid-template-columns: minmax(0, 1fr) auto 62px; align-items: center; column-gap: 8px; padding: 5px 6px; margin: 0 -6px; border-radius: 8px; }
 .q-row:hover { background: var(--bg2); }
 /* 값이 바뀔 때 색칠: 진하게 0.3초 → 옅게 0.35초 → 끝. 예전 '0.5초 동안 서서히(transition)'는 그동안 화면을 매 프레임(240Hz 모니터면 초당 240번) 다시 그려 CPU·GPU 를 씀 (2026-11-26) */
@@ -555,7 +571,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .q-mi.fl-fade.up-flash { background: color-mix(in srgb, var(--q-up) 7%, var(--bg2)); }
 .q-mi.fl-fade.dn-flash { background: color-mix(in srgb, var(--q-dn) 7%, var(--bg2)); }
 .q-body > .q-mac:first-child { margin-top: 8px; }
-.q-mac + .q-grp { margin-top: 8px; }
+.q-mac + .q-grp { margin-top: 5px; }
 /* 세계 증시: 지역별 지수 칩 — 눌러서 지금 탭에 넣기·빼기 */
 .q-world { margin: 0 0 6px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
 .q-wh { display: flex; align-items: center; gap: 6px; width: calc(100% + 12px); margin: 0 -6px; padding: 5px 6px; border-radius: 8px; text-align: left; }
@@ -623,6 +639,8 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   .q-sug button { padding: 7px 6px; }
   .q-link, .q-reset { padding: 8px 6px; }
   .q-wh { padding: 9px 6px; }
+  .q-grp { padding-top: 8px; padding-bottom: 7px; }
+  .q-grp.fold { padding-top: 9px; padding-bottom: 9px; }
   .q-mi { padding: 8px 6px; }
   .q-chip { height: 34px; padding: 0 12px; border-radius: 17px; font-size: 13px; }
   .q-chip.on { padding-left: 9px; }
@@ -638,6 +656,13 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .app.compact .quotes, .app.compact .main > :not(.clocks), .app.compact .mnav, .app.compact .grip { display: none !important; }
 .app.compact .main { display: block; height: 100vh; padding: 8px; overflow: hidden; }
 .app.compact .clocks { display: grid !important; cursor: default; }
+/* 시계만 보기 맨 위 간판 '도박장은 24시간 열려있다' (시세 패널 제목과 같은 주사위·네온) — 전체 보기에서는 시세 패널 제목이 있어서 숨김 */
+.c-sign { display: none; }
+.app.compact .c-sign { grid-column: 1 / -1; display: flex; align-items: center; gap: 6px; height: 20px; margin: -2px 0 -3px 3px; min-width: 0;
+  font-size: 13px; font-weight: 800; letter-spacing: -0.01em; color: var(--text2); white-space: nowrap; overflow: hidden; }
+.c-sign .q-dice { width: 16px; height: 16px; }
+.c-sign span { overflow: hidden; text-overflow: ellipsis; }
+.c-sign em { font-style: normal; color: var(--neon); text-shadow: var(--neon-glow); }
 
 /* ── 크기 조절 손잡이 (오른쪽 아래) ── */
 .grip {
@@ -936,6 +961,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   </header>
 
   <div class="clocks" id="clocks">
+    <div class="c-sign" aria-hidden="true"><svg class="q-dice" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="4.5"/><circle cx="8.6" cy="8.6" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="15.4" cy="15.4" r="1.5"/></svg><span>도박장은 <em>24시간</em> 열려있다</span></div>
     <div class="clk" id="clkKR" title="한국 표준시 (KST)">
       <div class="h"><b>한국</b><span>KST</span><span class="dt"></span></div>
       <div class="t"><span class="hm">--:--</span><small class="ss">:--</small></div>
@@ -1976,12 +2002,21 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     if (on && dv && dv.b) dvClose();
     compact = on; store.set('compact', on);
     $('app').classList.toggle('compact', on);
+    if (size) size.h += compactSignH();             // 맨 위 간판 줄만큼 더
     hideTip(); if (!$('sheet').hidden) closeSheet();
     $('clocks').title = on ? '두 번 클릭하면 전체 보기 · 끌어서 옮기기' : '';
     if (!fromHost) send(on ? { type: 'compact', value: true, w: size ? size.w : 0, h: size ? size.h : 0 } : { type: 'compact', value: false });
     applyClock();
     updateWide();
+    if (on) setTimeout(compactFit, 900);
   }
+  function compactSignH() { var c = $('clocks'); return Math.max(0, Math.round($('clkKR').getBoundingClientRect().top - c.getBoundingClientRect().top)); }
+  function compactFit() {                           // 시계만 보기: 내용이 창보다 크면 창 높이를 맞춤 (간판 줄이 생기기 전에 정해 둔 크기 등)
+    if (!compact || !host || $('clocks').hidden) return;
+    var need = Math.ceil($('clocks').getBoundingClientRect().height) + 16;
+    if (need > window.innerHeight + 1 && need < 1200) send({ type: 'compact', value: true, w: Math.round(window.innerWidth), h: need });
+  }
+  if (compact) setTimeout(compactFit, 1500);
 
   /* ── 위젯 프로그램과 연결 ── */
   function send(msg) { if (host) { try { host.postMessage(msg); } catch (e) {} } }
@@ -2048,6 +2083,9 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   var qWs = null, qWsKey = '', qPollT = null, qRetryT = null, qStT = 0, qMode = 'idle', qLastT = 0, qCatP = null;
   var qEdit = false, qQuery = '', qHot = 0;
   var qWorldOpen = store.get('qWorld', false);   // 편집 화면의 '세계 증시' 펼침
+  var qFold = store.get('qFold', {});            // 접어 둔 묶음 { '탭:묶음': 1 } — 묶음 = cash(증시 지수) · idx(지수 선물) · krw(원화) · usd(달러)
+  if (!qFold || typeof qFold !== 'object' || Array.isArray(qFold)) qFold = {};
+  var qGrpOf = {}, qOpenAnim = '';               // 접힌 묶음 안 종목 → 그 묶음 (값이 오면 요약만 새로) · 방금 펼친 묶음 (한 번만 스르르)
 
   (function sanitize() {
     if (!qLists || typeof qLists !== 'object') qLists = {};
@@ -2141,7 +2179,8 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   function qPaint(b, flash) {
     var d = qData[b], r = qRows[b];
     if (dv && dv.b === b) dvLive();          // 상세 화면이 열려 있으면 차트·표도 같이
-    if (!d || !r) return;
+    if (!d) return;
+    if (!r) { if (qGrpOf[b]) qSumPaint(qGrpOf[b]); return; }   // 접힌 묶음: 오른·내린 개수만
     var prev = r.v, prevTxt = r.px.textContent, txt = qFmt(b, d.c);
     setText(r.px, txt); r.v = d.c;
     var pct = d.o > 0 ? (d.c - d.o) / d.o * 100 : 0;
@@ -2233,27 +2272,37 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     var list = qList(qTab), all = qTab === 'all';
     var cash = list.filter(qIsCash), idx = list.filter(function (b) { return qIsIdx(b) && !qIsCash(b); });
     var krw = list.filter(qIsKrw), usd = list.filter(function (b) { return !qIsKrw(b) && !qIsIdx(b); });
-    function rows(arr) {             // 묶음 하나 = 격자: 열마다 위 → 아래 (R줄씩), 둘째 열부터 왼쪽에 옅은 선
+    function rows(arr, g) {          // 묶음 하나 = 격자: 열마다 위 → 아래 (R줄씩), 둘째 열부터 왼쪽에 옅은 선
       var R = Math.max(1, Math.ceil(arr.length / qCols));
-      return '<div class="q-gl" style="--rows:' + R + '">' + arr.map(function (b, i) {
+      return '<div class="q-gl' + (g === qOpenAnim ? ' q-in' : '') + '" style="--rows:' + R + '">' + arr.map(function (b, i) {
         var nm = qName(b), cs = qIsCash(b);
         return '<div class="q-row' + (cs ? ' q-cash' : '') + (i >= R ? ' cn' : '') + '" data-b="' + esc(b) + '" tabindex="0" role="button" title="누르면 차트 · 일별 시세"><div class="q-name"><b>' + esc(nm.n) + '</b>' +
           (cs ? '<small><span class="q-ses"></span></small>' : nm.sub ? '<small>' + esc(nm.sub) + '</small>' : '') +
           '</div><span class="q-px">—</span><span class="q-chg flat">—</span></div>';
       }).join('') + '</div>';
     }
-    var h = macHtml(), lastR = '';
-    function grp(label, r, n) {      // 묶음 제목 오른쪽: 등락 기준 (앞 묶음과 다를 때만) — 여러 열이면 종목이 있는 열마다 위에
+    var h = macHtml(), lastR = '', folds = [];
+    qGrpOf = {};
+    function grp(g, label, r, arr) { // 묶음 제목(누르면 접기·펼치기) + 종목들 — 제목 오른쪽: 등락 기준 (앞에 펼친 묶음과 다를 때만), 여러 열이면 종목이 있는 열마다 위에
+      var n = arr.length, lb = '<span class="l">' + IC_DN + '<span>' + label + '</span>';
+      if (qFold[qTab + ':' + g]) {   // 접힘: 개수 + 오른·내린 개수만 (종목 줄은 안 만듦)
+        var o = { g: g, list: arr, sum: null, h: '' }; folds.push(o);
+        arr.forEach(function (b) { qGrpOf[b] = o; });
+        return '<button class="q-grp fold" data-g="' + g + '" aria-expanded="false" title="' + esc('누르면 펼치기 — ' + arr.map(function (b) { return qName(b).n; }).join(', ')) + '">' +
+          lb + '<span class="n">' + n + '</span></span><span class="q-sum"></span></button>';
+      }
       var rr = r !== lastR ? '<span class="r">' + r + '</span>' : ''; lastR = r;
-      if (qCols < 2) return '<div class="q-grp"><span>' + label + '</span>' + rr + '</div>';
+      var at = ' data-g="' + g + '" aria-expanded="true" title="누르면 접기"';
+      lb += '</span>';
+      if (qCols < 2) return '<button class="q-grp"' + at + '>' + lb + rr + '</button>' + rows(arr, g);
       var R = Math.max(1, Math.ceil(n / qCols)), used = Math.ceil(n / R), cells = '';
-      for (var k = 0; k < qCols; k++) cells += '<div class="q-gc">' + (k ? '' : '<span>' + label + '</span>') + (k < used ? rr : '') + '</div>';
-      return '<div class="q-grp mc">' + cells + '</div>';
+      for (var k = 0; k < qCols; k++) cells += '<span class="q-gc">' + (k ? '' : lb) + (k < used ? rr : '') + '</span>';
+      return '<button class="q-grp mc"' + at + '>' + cells + '</button>' + rows(arr, g);
     }
-    if (cash.length) h += grp('증시 지수 · 장 시간에만', '전일 대비', cash.length) + rows(cash);
-    if (idx.length) h += grp('지수 선물 · 24시간', '24시간 등락', idx.length) + rows(idx);
-    if (krw.length) h += grp(all ? '국내 · 원화 환산' : '원화 환산', '24시간 등락', krw.length) + rows(krw);
-    if (usd.length) h += grp(all ? '해외 · 달러' : '달러', '24시간 등락', usd.length) + rows(usd);
+    if (cash.length) h += grp('cash', '증시 지수 · 장 시간에만', '전일 대비', cash);
+    if (idx.length) h += grp('idx', '지수 선물 · 24시간', '24시간 등락', idx);
+    if (krw.length) h += grp('krw', all ? '국내 · 원화 환산' : '원화 환산', '24시간 등락', krw);
+    if (usd.length) h += grp('usd', all ? '해외 · 달러' : '달러', '24시간 등락', usd);
     if (!list.length) h += '<div class="q-empty">이 탭에 넣은 종목이 없습니다.</div>';
     h += '<div class="q-foot">' + ((Q.world || []).length ? '<button class="q-link" data-act="world-edit">세계 증시 넣기·빼기</button>' : '') +
       '<button class="q-link" data-act="edit">＋ 종목 추가 · 편집</button></div>' +
@@ -2263,16 +2312,40 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     body.querySelectorAll('.q-row').forEach(function (el) {
       qRows[el.getAttribute('data-b')] = { el: el, px: el.querySelector('.q-px'), ch: el.querySelector('.q-chg'), ses: el.querySelector('.q-ses'), v: null };
     });
+    folds.forEach(function (o) { o.sum = body.querySelector('.q-grp[data-g="' + o.g + '"] .q-sum'); qSumPaint(o); });
     list.forEach(function (b) { qPaint(b, false); });
     MAC.forEach(function (b) { macPaint(b, false); });
     qSesAll();                         // 값이 아직 없어도 장 상태는 바로
+  }
+  function qSumPaint(o) {           // 접힌 묶음 오른쪽: ▲오른 · ▼내린 개수 (보합은 있을 때만)
+    if (!o.sum) return;
+    var u = 0, dn = 0, f = 0;
+    o.list.forEach(function (b) {
+      var d = qData[b]; if (!d || !(d.o > 0)) return;
+      var p = (d.c - d.o) / d.o * 100;
+      if (p > 0.004) u++; else if (p < -0.004) dn++; else f++;
+    });
+    var h = (u ? '<b class="up">▲' + u + '</b>' : '') + (dn ? '<b class="dn">▼' + dn + '</b>' : '') + (f ? '<b class="fl">보합 ' + f + '</b>' : '');
+    if (h !== o.h) { o.h = h; o.sum.innerHTML = h; o.sum.title = u + dn + f ? '오름 ' + u + ' · 내림 ' + dn + (f ? ' · 보합 ' + f : '') : ''; }
+  }
+  function qFoldSet(g) {            // 묶음 접기 ↔ 펼치기 (탭마다 기억)
+    var k = qTab + ':' + g, body = $('qBody'), y = body.scrollTop, ae = document.activeElement;
+    var foc = !!(ae && ae.closest && ae.closest('.q-grp[data-g]'));
+    if (qFold[k]) delete qFold[k]; else qFold[k] = 1;
+    store.set('qFold', qFold);
+    qOpenAnim = qFold[k] ? '' : g;
+    qRenderList(); qOpenAnim = '';
+    body.scrollTop = y;
+    var nb = body.querySelector('.q-grp[data-g="' + g + '"]');
+    if (nb && foc) nb.focus();
   }
   function qCapHtml() {             // 목록 끝 작은 안내
     var def = qTabDef(qTab), ps;
     if (qEdit) ps = ['↑·↓ = 한 칸씩 순서 바꾸기. 시세 목록에서는 같은 묶음(증시 지수·지수 선물·종목) 안에서 이 순서이고, 여러 열이면 열마다 위 → 아래.',
                      '세계 증시(현물 지수)는 위 \'세계 증시\'를 눌러 넣고 뺄 수 있습니다. 지수 선물 5개(코스피200·다우·나스닥100·S&P500·니케이225)와 바이낸스 무기한 선물 종목은 이름·기호로 찾아 넣습니다. 한 탭에 ' + Q_MAX + '개까지.'];
     else {
-      ps = ['증시 지수: 거래소 장 시간에만 움직임 · 텐센트 증권·동방재부(Eastmoney) 공개 시세 (늦으면 \'지연\' 표시) · 한·중·일·미 밖의 시장은 휴장일 달력이 없어 거래가 없으면 \'휴장 추정\'',
+      ps = ['묶음 제목(증시 지수·지수 선물·원화·달러)을 누르면 접고 펼칩니다 · 탭마다 기억 · 접으면 오른 ▲·내린 ▼ 개수',
+            '증시 지수: 거래소 장 시간에만 움직임 · 텐센트 증권·동방재부(Eastmoney) 공개 시세 (늦으면 \'지연\' 표시) · 한·중·일·미 밖의 시장은 휴장일 달력이 없어 거래가 없으면 \'휴장 추정\'',
             '지수 선물·종목: 24시간 무기한 선물 가격 (거래소 시세 아님) · 하이퍼리퀴드·게이트(다우) / 종목 바이낸스'];
       if (def.note) ps.push(def.note);
     }
@@ -2449,6 +2522,8 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     else if (qMode !== 'live' && qOn) qSnapshot(qList(qTab));   // 실시간이 아니면 바로 한 번 받아 옴
   });
   $('qBody').addEventListener('click', function (e) {
+    var gh = e.target.closest('.q-grp[data-g]');
+    if (gh && !qEdit) { qFoldSet(gh.getAttribute('data-g')); return; }   // 묶음 접기·펼치기
     var s = e.target.closest('[data-add]');
     if (s) { qAdd(s.getAttribute('data-add')); return; }
     var tg = e.target.closest('[data-tog]');
